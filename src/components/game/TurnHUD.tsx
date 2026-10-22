@@ -1,7 +1,8 @@
 import React from 'react';
 import { PlayerColor, Player } from '../../types/game';
 import { FACTIONS } from '../../constants/boardData';
-import { Volume2, VolumeX, Home, RotateCcw, HelpCircle } from 'lucide-react';
+import { Volume2, VolumeX, Home, RotateCcw, HelpCircle, Sliders } from 'lucide-react';
+import { CoinBucket } from '../coins/CoinBucket';
 
 export interface TurnHUDProps {
   currentColor: PlayerColor;
@@ -12,6 +13,7 @@ export interface TurnHUDProps {
   onHome: () => void;
   onRestart: () => void;
   onOpenRules: () => void;
+  onOpenSettings?: () => void;
 }
 
 export const TurnHUD: React.FC<TurnHUDProps> = ({
@@ -23,6 +25,7 @@ export const TurnHUD: React.FC<TurnHUDProps> = ({
   onHome,
   onRestart,
   onOpenRules,
+  onOpenSettings,
 }) => {
   const currentFaction = FACTIONS[currentColor];
 
@@ -71,8 +74,9 @@ export const TurnHUD: React.FC<TurnHUDProps> = ({
           </span>
         </div>
 
-        {/* Right: Sound Mute & Restart */}
+        {/* Right: Coin Treasury, Sound Mute, Settings, & Restart */}
         <div className="flex items-center gap-1.5 shrink-0">
+          <CoinBucket />
           <button
             type="button"
             onClick={onToggleMute}
@@ -82,6 +86,17 @@ export const TurnHUD: React.FC<TurnHUDProps> = ({
           >
             {isMuted ? <VolumeX className="w-5 h-5 text-red-400" /> : <Volume2 className="w-5 h-5 text-emerald-400" />}
           </button>
+          {onOpenSettings && (
+            <button
+              type="button"
+              onClick={onOpenSettings}
+              aria-label="Audio & Settings"
+              title="Audio & Settings"
+              className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg text-[#c8b69b] hover:text-[#ffd700] hover:bg-[#1a233a] transition-colors cursor-pointer"
+            >
+              <Sliders className="w-4 h-4 text-[#ffd700]" />
+            </button>
+          )}
           <button
             type="button"
             onClick={onRestart}

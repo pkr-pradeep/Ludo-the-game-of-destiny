@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
-import { Play, Users, HelpCircle, Compass, Sparkles } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Play, Users, HelpCircle, Sparkles, GraduationCap, Sliders } from 'lucide-react';
 import { FACTIONS } from '../constants/boardData';
 import { RulesModal } from '../components/modals/RulesModal';
 import { JoinGameModal } from '../components/modals/JoinGameModal';
 import { LoaderPreviewModal } from '../components/modals/LoaderPreviewModal';
+import { CoinBucket } from '../components/coins/CoinBucket';
+import { LearnAndEarnModal } from '../components/quiz/LearnAndEarnModal';
+import { AudioSettingsModal } from '../components/settings/AudioSettingsModal';
+import { audioService } from '../services/audio/audioService';
 
 export interface HomeScreenProps {
   onStartGame: (playerCount: 2 | 3 | 4) => void;
@@ -14,6 +18,12 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStartGame }) => {
   const [isRulesOpen, setIsRulesOpen] = useState<boolean>(false);
   const [isJoinOpen, setIsJoinOpen] = useState<boolean>(false);
   const [isLoaderPreviewOpen, setIsLoaderPreviewOpen] = useState<boolean>(false);
+  const [isQuizOpen, setIsQuizOpen] = useState<boolean>(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+
+  useEffect(() => {
+    audioService.playBgm('home');
+  }, []);
 
   return (
     <div className="min-h-screen w-full flex flex-col justify-between bg-temple-pattern relative overflow-x-hidden selection:bg-[#d4af37]/30 selection:text-[#ffd700]">
@@ -23,29 +33,46 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStartGame }) => {
         aria-hidden="true"
       />
 
-      {/* Top Bar */}
-      <header className="w-full px-4 py-3 sm:py-4 border-b border-[#d4af37]/20 flex items-center justify-between z-10">
-        <div className="flex items-center gap-2">
+      {/* Top Bar with Brand, Coin Treasury & Settings */}
+      <header className="w-full px-3 sm:px-4 py-2.5 sm:py-3 border-b border-[#d4af37]/20 flex items-center justify-between z-10 gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#ffd700] via-[#d4af37] to-[#78350f] p-0.5 shadow-md">
             <div className="w-full h-full rounded-full bg-[#0b1329] flex items-center justify-center">
               <span className="text-xs font-cinzel font-black text-[#ffd700]">ॐ</span>
             </div>
           </div>
-          <span className="text-xs sm:text-sm font-cinzel font-bold tracking-wider text-[#f5ecd8] uppercase">
+          <span className="hidden sm:inline text-xs sm:text-sm font-cinzel font-bold tracking-wider text-[#f5ecd8] uppercase">
             Heritage of Bharat
           </span>
         </div>
 
-        {/* Konark Wheel Component Inspector Button */}
-        <button
-          type="button"
-          onClick={() => setIsLoaderPreviewOpen(true)}
-          className="min-h-[44px] px-3 py-1.5 rounded-lg text-xs font-cinzel text-[#d4af37] border border-[#d4af37]/40 hover:bg-[#d4af37]/10 flex items-center gap-1.5 transition-colors cursor-pointer"
-          title="Inspect the Konark Sun Temple Wheel Loader component"
-        >
-          <Sparkles className="w-3.5 h-3.5 text-[#ffd700]" />
-          <span>Konark Wheel</span>
-        </button>
+        {/* Right Action Cluster: Coin Bucket, Konark Wheel Inspector, Settings */}
+        <div className="flex items-center gap-2">
+          {/* Virtual Coin Treasury Bucket */}
+          <CoinBucket />
+
+          {/* Konark Wheel Component Inspector Button */}
+          <button
+            type="button"
+            onClick={() => setIsLoaderPreviewOpen(true)}
+            className="min-h-[44px] px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-cinzel text-[#d4af37] border border-[#d4af37]/40 hover:bg-[#d4af37]/10 flex items-center gap-1.5 transition-colors cursor-pointer"
+            title="Inspect the Konark Sun Temple Wheel Loader component"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-[#ffd700]" />
+            <span className="hidden md:inline">Konark Wheel</span>
+          </button>
+
+          {/* Audio & Preferences Settings */}
+          <button
+            type="button"
+            onClick={() => setIsSettingsOpen(true)}
+            aria-label="Audio & Settings"
+            title="Audio & Settings"
+            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[#c8b69b] hover:text-[#ffd700] hover:bg-white/5 border border-[#d4af37]/30 transition-colors cursor-pointer"
+          >
+            <Sliders className="w-4 h-4 text-[#ffd700]" />
+          </button>
+        </div>
       </header>
 
       {/* Main Content Area */}
@@ -135,6 +162,16 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStartGame }) => {
             Join Game
           </button>
 
+          {/* Learn & Earn Daily Quiz Button */}
+          <button
+            type="button"
+            onClick={() => setIsQuizOpen(true)}
+            className="w-full min-h-[48px] px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#1e293b] to-[#0f172a] hover:from-[#334155] hover:to-[#1e293b] text-[#fde047] border border-[#d4af37]/60 font-cinzel font-bold text-xs uppercase tracking-wider shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+          >
+            <GraduationCap className="w-4 h-4 text-[#ffd700]" />
+            Learn & Earn (Daily Gita & Math Quiz)
+          </button>
+
           {/* Tertiary CTA: How to Play */}
           <button
             type="button"
@@ -185,6 +222,14 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStartGame }) => {
       <LoaderPreviewModal
         isOpen={isLoaderPreviewOpen}
         onClose={() => setIsLoaderPreviewOpen(false)}
+      />
+      <LearnAndEarnModal
+        isOpen={isQuizOpen}
+        onClose={() => setIsQuizOpen(false)}
+      />
+      <AudioSettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
       />
     </div>
   );

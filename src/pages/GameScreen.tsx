@@ -1,11 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLudoGame } from '../engine/useLudoGame';
 import { soundManager } from '../utils/sound';
+import { audioService } from '../services/audio/audioService';
 import { TurnHUD } from '../components/game/TurnHUD';
 import { LudoBoard } from '../components/board/LudoBoard';
 import { DiceRoller } from '../components/game/DiceRoller';
 import { RulesModal } from '../components/modals/RulesModal';
 import { VictoryModal } from '../components/modals/VictoryModal';
+import { ShakuniAnimation } from '../components/character/ShakuniAnimation';
+import { KrishnaVictoryModal } from '../components/character/KrishnaVictoryModal';
+import { AudioSettingsModal } from '../components/settings/AudioSettingsModal';
 import { ScrollText, ChevronDown, ChevronUp } from 'lucide-react';
 
 export interface GameScreenProps {
@@ -16,7 +20,14 @@ export interface GameScreenProps {
 export const GameScreen: React.FC<GameScreenProps> = ({ onHome }) => {
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.getMuted());
   const [isRulesOpen, setIsRulesOpen] = useState<boolean>(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
   const [showLogs, setShowLogs] = useState<boolean>(false);
+
+  // Victory cinematic states
+  const [matchId, setMatchId] = useState<string>(() => `match-${Date.now()}`);
+  const [showShakuni, setShowShakuni] = useState<boolean>(false);
+  const [showKrishna, setShowKrishna] = useState<boolean>(false);
+  const [hasTriggeredVictoryCinematic, setHasTriggeredVictoryCinematic] = useState<boolean>(false);
 
   const {
     players,
@@ -35,9 +46,43 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onHome }) => {
     restartGame,
   } = useLudoGame();
 
+  // Play gameplay BGM when entering GameScreen
+  useEffect(() => {
+    audioService.playBgm('gameplay');
+  }, []);
+
+  // When human player wins (Red / Kalinga), trigger Shakuni defeat first, then Krishna victory!
+  useEffect(() => {
+    if (winner && !hasTriggeredVictoryCinematic) {
+      setHasTriggeredVictoryCinematic(true);
+      if (winner.color === 'red') {
+        setShowShakuni(true);
+      }
+    }
+  }, [winner, hasTriggeredVictoryCinematic]);
+
+  const handleRestart = () => {
+    restartGame();
+    setMatchId(`match-${Date.now()}`);
+    setShowShakuni(false);
+    setShowKrishna(false);
+    setHasTriggeredVictoryCinematic(false);
+    audioService.playBgm('gameplay');
+  };
+
+  const handleShakuniFinish = () => {
+    setShowShakuni(false);
+    setShowKrishna(true);
+  };
+
+  const handleKrishnaClose = () => {
+    setShowKrishna(false);
+  };
+
   const handleToggleMute = () => {
     const nextVal = soundManager.toggleMute();
     setIsMuted(nextVal);
+    audioService.toggleMute();
   };
 
   return (
@@ -50,8 +95,9 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onHome }) => {
         isMuted={isMuted}
         onToggleMute={handleToggleMute}
         onHome={onHome}
-        onRestart={restartGame}
+        onRestart={handleRestart}
         onOpenRules={() => setIsRulesOpen(true)}
+        onOpenSettings={() => setIsSettingsOpen(true)}
       />
 
       {/* Main Board Arena */}
@@ -118,12 +164,36 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onHome }) => {
         </div>
       </main>
 
-      {/* Modals */}
+      {/* Shakuni Mama Confounded Loss Animation (triggers first on human victory) */}
+      <ShakuniAnimation
+        isOpen={showShakuni}
+        onComplete={handleShakuniFinish}
+        onSkip={handleShakuniFinish}
+      />
+
+      {/* Lord Krishna Divine Victory Celebration & Gita Verse Blessing */}
+      <KrishnaVictoryModal
+        isOpen={showKrishna}
+        matchId={matchId}
+        winnerName={winner?.name || 'Kalinga Warrior'}
+        onClose={handleKrishnaClose}
+        onPlayAgain={handleRestart}
+      />
+
+      {/* General Victory Modal for other winner scenarios */}
+      {winner && winner.color !== 'red' && !showShakuni && !showKrishna && (
+        <VictoryModal
+          winner={winner}
+          onPlayAgain={handleRestart}
+          onHome={onHome}
+        />
+      )}
+
+      {/* Modals & Audio Settings */}
       <RulesModal isOpen={isRulesOpen} onClose={() => setIsRulesOpen(false)} />
-      <VictoryModal
-        winner={winner}
-        onPlayAgain={restartGame}
-        onHome={onHome}
+      <AudioSettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
       />
     </div>
   );

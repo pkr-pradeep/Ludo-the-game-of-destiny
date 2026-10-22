@@ -1,0 +1,163 @@
+{
+  "version": "1.0.0",
+  "title": "Learn and Earn: Wisdom of Bharat & Mathematics",
+  "description": "Daily educational challenge combining Vedic wisdom from the Bhagavad Gita and foundational Mathematics through Class 6.",
+  "questions": [
+    {
+      "id": "math_01_addition",
+      "category": "mathematics",
+      "difficulty": "easy",
+      "question": "A warrior in Kalinga collected 348 iron arrows in the morning and 475 arrows in the evening. How many total arrows were collected?",
+      "options": ["813", "823", "723", "815"],
+      "correctAnswerIndex": 1,
+      "explanation": "348 + 475 = 823 total arrows.",
+      "rewardCoins": 10
+    },
+    {
+      "id": "math_02_subtraction",
+      "category": "mathematics",
+      "difficulty": "easy",
+      "question": "The royal treasury had 1,000 gold coins. If 365 coins were allocated to restore the temple wheels, how many coins remain?",
+      "options": ["645", "635", "735", "625"],
+      "correctAnswerIndex": 1,
+      "explanation": "1,000 - 365 = 635 coins remaining.",
+      "rewardCoins": 10
+    },
+    {
+      "id": "math_03_algebra_solve",
+      "category": "mathematics",
+      "difficulty": "medium",
+      "question": "Solve the algebraic equation for x: 3x + 15 = 45. What is the value of x?",
+      "options": ["x = 5", "x = 8", "x = 10", "x = 12"],
+      "correctAnswerIndex": 2,
+      "explanation": "Subtract 15 from both sides: 3x = 30. Divide by 3: x = 10.",
+      "rewardCoins": 10
+    },
+    {
+      "id": "math_04_perimeter",
+      "category": "mathematics",
+      "difficulty": "medium",
+      "question": "A square courtyard inside the Konark temple complex has a side length of 24 meters. What is its total perimeter?",
+      "options": ["72 meters", "96 meters", "48 meters", "576 meters"],
+      "correctAnswerIndex": 1,
+      "explanation": "Perimeter of a square = 4 × side = 4 × 24 = 96 meters.",
+      "rewardCoins": 10
+    },
+    {
+      "id": "math_05_algebra_expression",
+      "category": "mathematics",
+      "difficulty": "hard",
+      "question": "If 4y - 7 = 29, what is the value of 2y + 5?",
+      "options": ["18", "23", "21", "25"],
+      "correctAnswerIndex": 1,
+      "explanation": "4y = 29 + 7 = 36, so y = 9. Therefore, 2(9) + 5 = 18 + 5 = 23.",
+      "rewardCoins": 10
+    },
+    {
+      "id": "math_06_fractions",
+      "category": "mathematics",
+      "difficulty": "medium",
+      "question": "Simplify the fraction sum: (3/8) + (2/8). What is the resulting fraction?",
+      "options": ["5/16", "5/8", "6/8", "1/2"],
+      "correctAnswerIndex": 1,
+      "explanation": "Common denominator is 8. Sum = (3 + 2) / 8 = 5/8.",
+      "rewardCoins": 10
+    },
+    {
+      "id": "gita_01_ch2_v47",
+      "category": "gita",
+      "difficulty": "easy",
+      "shlokaSnippet": "karmaṇyevādhikāraste mā phaleṣu kadācana | mā karmaphalaheturbhūrmā te saṅgo'stvakarmaṇi ||",
+      "question": "From which chapter and verse of the Bhagavadgītā (Gita Press) is this renowned shloka on selfless action taken?",
+      "options": [
+        "Chapter II (Sāṅkhyayoga), Verse 47",
+        "Chapter III (Karmayoga), Verse 15",
+        "Chapter IV (Jñānayoga), Verse 7",
+        "Chapter XVIII (Mokṣayoga), Verse 66"
+      ],
+      "correctAnswerIndex": 0,
+      "explanation": "Chapter II (Sāṅkhyayoga / The Yoga of Knowledge), Verse 47: 'Your right is to work only and never to the fruit thereof...'",
+      "rewardCoins": 10
+    },
+    {
+      "id": "gita_02_ch4_v7",
+      "category": "gita",
+      "difficulty": "easy",
+      "shlokaSnippet": "yadā yadā hi dharmasya glānirbhavati bhārata | abhyutthānamadharmasya tadātmānaṃ sṛjāmyaham ||",
+      "question": "Identify the Chapter and Verse number of this sacred declaration by Bhagavān Śrī Kṛṣṇa:",
+      "options": [
+        "Chapter I, Verse 21",
+        "Chapter IV, Verse 7",
+        "Chapter IX, Verse 22",
+        "Chapter XI, Verse 32"
+      ],
+      "correctAnswerIndex": 1,
+      "explanation": "Chapter IV, Verse 7: 'Arjuna, whenever righteousness is on the decline, unrighteousness is in the ascendant, then I body Myself forth.'",
+      "rewardCoins": 10
+    },
+    {
+      "id": "gita_03_ch18_v78",
+      "category": "gita",
+      "difficulty": "medium",
+      "shlokaSnippet": "yatra yogeśvaraḥ kṛṣṇo yatra pārtho dhanurdharaḥ | tatra śrīrvijayo bhūtirdhruvā nītirmatirmama ||",
+      "question": "In the final verse of the Bhagavadgītā, Sañjaya declares where victory and righteousness reside. Which Chapter and Verse is this?",
+      "options": [
+        "Chapter XII, Verse 20",
+        "Chapter XV, Verse 20",
+        "Chapter XVIII, Verse 78",
+        "Chapter XI, Verse 55"
+      ],
+      "correctAnswerIndex": 2,
+      "explanation": "Chapter XVIII (The Yoga of Liberation through the Path of Knowledge and Self-Surrender), Verse 78.",
+      "rewardCoins": 10
+    },
+    {
+      "id": "gita_04_ch9_title",
+      "category": "gita",
+      "difficulty": "medium",
+      "shlokaSnippet": "ananyāścintayanto māṃ ye janāḥ paryupāsate | teṣāṃ nityābhiyuktānāṃ yogakṣemaṃ vahāmyaham || [9.22]",
+      "question": "This verse promising divine protection appears in Chapter IX. What is the English title of Chapter IX according to Gita Press?",
+      "options": [
+        "The Yoga of Devotion",
+        "The Yoga of Sovereign Science and the Sovereign Secret",
+        "The Yoga of Self-Control",
+        "The Yoga of Divine Glories"
+      ],
+      "correctAnswerIndex": 1,
+      "explanation": "Chapter IX is entitled 'The Yoga of Sovereign Science and the Sovereign Secret' (Rājavidyā-Rājaguhya-Yoga).",
+      "rewardCoins": 10
+    },
+    {
+      "id": "gita_05_ch6_v5",
+      "category": "gita",
+      "difficulty": "hard",
+      "shlokaSnippet": "uddharedātmanātmānaṃ nātmānamavasādayet | ātmaiva hyātmano bandhurātmaiva ripurātmanaḥ ||",
+      "question": "Identify the chapter title and verse number where the Lord instructs: 'One should lift oneself by one's own efforts...'",
+      "options": [
+        "Chapter VI (The Yoga of Self-Control), Verse 5",
+        "Chapter III (Karmayoga), Verse 35",
+        "Chapter XIII (The Field and Knower), Verse 11",
+        "Chapter XVI (Divine Properties), Verse 1"
+      ],
+      "correctAnswerIndex": 0,
+      "explanation": "Chapter VI (The Yoga of Self-Control / Dhyānayoga), Verse 5.",
+      "rewardCoins": 10
+    },
+    {
+      "id": "gita_06_ch2_v20",
+      "category": "gita",
+      "difficulty": "hard",
+      "shlokaSnippet": "na jāyate mriyate vā kadācinnāyaṃ bhūtvā bhavitā vā na bhūyaḥ | ajo nityaḥ śāśvato'yaṃ purāṇo na hanyate hanyamāne śarīre ||",
+      "question": "This fundamental verse teaching that the soul is unborn, eternal, and indestructible is found at which location?",
+      "options": [
+        "Chapter II, Verse 20",
+        "Chapter II, Verse 48",
+        "Chapter VII, Verse 12",
+        "Chapter X, Verse 20"
+      ],
+      "correctAnswerIndex": 0,
+      "explanation": "Chapter II, Verse 20 in the section Sāṅkhyayoga (The Yoga of Knowledge).",
+      "rewardCoins": 10
+    }
+  ]
+}
