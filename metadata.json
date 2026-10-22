@@ -1,0 +1,6 @@
+{
+  "name": "Ludo: The Game of Destiny",
+  "description": "A mobile-first Ludo board game inspired by Odisha's heritage and the Mahabharata, crafted with sandstone, deep blue, and gold aesthetics.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
