@@ -19,10 +19,28 @@ export function canExitBase(roll: number): boolean {
 }
 
 /**
- * Return the opponent's ID in a two-player game between Red and Green.
+ * Return the next player's ID in active turn order.
  */
-export function getOpponentId(player: PlayerId): PlayerId {
-  return player === 'red' ? 'green' : 'red';
+export function getNextPlayerId(
+  player: PlayerId,
+  activeOrder: PlayerId[] = ['red', 'green']
+): PlayerId {
+  const idx = activeOrder.indexOf(player);
+  if (idx === -1) return activeOrder[0];
+  return activeOrder[(idx + 1) % activeOrder.length];
+}
+
+/**
+ * Return the opponent's ID in a two-player game (or next player in multi-player).
+ */
+export function getOpponentId(
+  player: PlayerId,
+  activeOrder?: PlayerId[]
+): PlayerId {
+  if (!activeOrder || activeOrder.length === 2) {
+    return player === 'red' ? 'green' : 'red';
+  }
+  return getNextPlayerId(player, activeOrder);
 }
 
 /**
@@ -42,23 +60,24 @@ export function computeLegalMoveForToken(
 
     const toStep = 0;
     const trackIndex = getAbsoluteTrackIndex(token.player, toStep)!;
-    const opponentId = getOpponentId(token.player);
-    const opponent = allPlayers[opponentId];
 
     // Check if opponent token is on the player's start square
-    // (Note: start squares 0 and 13 are marked safe, but we evaluate dynamically)
     let isCapture = false;
     let capturedToken: Move['capturedToken'];
 
     if (!isSafeTrackIndex(trackIndex)) {
-      const victim = opponent.tokens.find((t) => {
-        const oppTrack = getAbsoluteTrackIndex(opponentId, t.step);
-        return oppTrack === trackIndex;
-      });
+      for (const [oppId, opponent] of Object.entries(allPlayers)) {
+        if (oppId === token.player || !opponent) continue;
+        const victim = opponent.tokens.find((t) => {
+          const oppTrack = getAbsoluteTrackIndex(oppId as PlayerId, t.step);
+          return oppTrack === trackIndex;
+        });
 
-      if (victim) {
-        isCapture = true;
-        capturedToken = { player: opponentId, tokenId: victim.id };
+        if (victim) {
+          isCapture = true;
+          capturedToken = { player: oppId as PlayerId, tokenId: victim.id };
+          break;
+        }
       }
     }
 
@@ -96,17 +115,18 @@ export function computeLegalMoveForToken(
     const targetTrackIndex = getAbsoluteTrackIndex(token.player, nextStep)!;
 
     if (!isSafeTrackIndex(targetTrackIndex)) {
-      const opponentId = getOpponentId(token.player);
-      const opponent = allPlayers[opponentId];
+      for (const [oppId, opponent] of Object.entries(allPlayers)) {
+        if (oppId === token.player || !opponent) continue;
+        const victim = opponent.tokens.find((t) => {
+          const oppTrack = getAbsoluteTrackIndex(oppId as PlayerId, t.step);
+          return oppTrack === targetTrackIndex;
+        });
 
-      const victim = opponent.tokens.find((t) => {
-        const oppTrack = getAbsoluteTrackIndex(opponentId, t.step);
-        return oppTrack === targetTrackIndex;
-      });
-
-      if (victim) {
-        isCapture = true;
-        capturedToken = { player: opponentId, tokenId: victim.id };
+        if (victim) {
+          isCapture = true;
+          capturedToken = { player: oppId as PlayerId, tokenId: victim.id };
+          break;
+        }
       }
     }
   }

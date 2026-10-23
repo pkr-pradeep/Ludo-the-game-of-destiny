@@ -18,6 +18,7 @@ import {
 import {
   computeLegalMoves,
   getOpponentId,
+  getNextPlayerId,
   isPlayerVictor,
 } from './rules';
 import { IDiceRoller, StandardDiceRoller, isValidRoll } from './dice';
@@ -30,12 +31,22 @@ export class LudoGameEngine {
   private maxConsecutiveSixes: number;
   private listeners: Set<StateChangeListener> = new Set();
   private eventCounter: number = 0;
+  private activePlayerOrder: PlayerId[] = ['red', 'green'];
 
   constructor(options?: GameEngineOptions) {
     this.diceRoller = options?.diceRoller
       ? { roll: options.diceRoller }
       : new StandardDiceRoller();
     this.maxConsecutiveSixes = options?.maxConsecutiveSixes ?? 3;
+    if (options?.activePlayers && options.activePlayers.length >= 2) {
+      this.activePlayerOrder = options.activePlayers;
+    } else if (options?.playerCount === 3) {
+      this.activePlayerOrder = ['red', 'green', 'yellow'];
+    } else if (options?.playerCount === 4) {
+      this.activePlayerOrder = ['red', 'green', 'yellow', 'blue'];
+    } else {
+      this.activePlayerOrder = ['red', 'green'];
+    }
     this.state = this.createInitialState(options?.firstPlayer ?? 'red');
   }
 
@@ -51,26 +62,31 @@ export class LudoGameEngine {
   }
 
   private createInitialState(firstPlayer: PlayerId): GameState {
-    const players: Record<PlayerId, PlayerState> = {
-      red: {
-        id: 'red',
-        name: 'Kalinga Sena',
-        tokens: this.createInitialTokens('red'),
-        finishedCount: 0,
-        hasWon: false,
-      },
-      green: {
-        id: 'green',
-        name: 'Utkala Vana',
-        tokens: this.createInitialTokens('green'),
-        finishedCount: 0,
-        hasWon: false,
-      },
+    const factionNames: Record<PlayerId, string> = {
+      red: 'Kalinga Sena',
+      green: 'Utkala Vana',
+      yellow: 'Surya Rath',
+      blue: 'Nilachala Sena',
     };
+
+    const players = {} as Record<PlayerId, PlayerState>;
+    for (const pid of this.activePlayerOrder) {
+      players[pid] = {
+        id: pid,
+        name: factionNames[pid],
+        tokens: this.createInitialTokens(pid),
+        finishedCount: 0,
+        hasWon: false,
+      };
+    }
+
+    const startPlayer = this.activePlayerOrder.includes(firstPlayer)
+      ? firstPlayer
+      : this.activePlayerOrder[0];
 
     return {
       players,
-      activePlayer: firstPlayer,
+      activePlayer: startPlayer,
       currentRoll: null,
       phase: 'NEED_ROLL',
       legalMoves: [],
@@ -160,7 +176,7 @@ export class LudoGameEngine {
         this.state.consecutiveSixes = 0;
         this.state.currentRoll = null;
         this.state.legalMoves = [];
-        this.state.activePlayer = getOpponentId(prevPlayer);
+        this.state.activePlayer = getNextPlayerId(prevPlayer, this.activePlayerOrder);
         this.state.phase = 'NEED_ROLL';
         this.state.turnCount++;
 
@@ -178,14 +194,15 @@ export class LudoGameEngine {
     const legalMoves = computeLegalMoves(player, rollValue, this.state.players);
     this.state.legalMoves = legalMoves;
 
-    this.emitEvent(
-      'DICE_ROLLED',
-      `${player.name} rolled a ${rollValue}.`,
-      { roll: rollValue }
-    );
-
     if (legalMoves.length === 0) {
       // No legal moves possible with this roll
+      this.state.phase = 'NEED_ROLL';
+      this.emitEvent(
+        'DICE_ROLLED',
+        `${player.name} rolled a ${rollValue}.`,
+        { roll: rollValue }
+      );
+
       const prevPlayer = this.state.activePlayer;
       this.emitEvent(
         'NO_LEGAL_MOVES',
@@ -195,7 +212,7 @@ export class LudoGameEngine {
 
       this.state.currentRoll = null;
       this.state.legalMoves = [];
-      this.state.activePlayer = getOpponentId(prevPlayer);
+      this.state.activePlayer = getNextPlayerId(prevPlayer, this.activePlayerOrder);
       this.state.phase = 'NEED_ROLL';
       this.state.turnCount++;
 
@@ -205,6 +222,11 @@ export class LudoGameEngine {
       );
     } else {
       this.state.phase = 'NEED_MOVE';
+      this.emitEvent(
+        'DICE_ROLLED',
+        `${player.name} rolled a ${rollValue}.`,
+        { roll: rollValue }
+      );
     }
 
     return rollValue;
@@ -324,7 +346,7 @@ export class LudoGameEngine {
       this.state.currentRoll = null;
       this.state.legalMoves = [];
       const prevPlayer = this.state.activePlayer;
-      this.state.activePlayer = getOpponentId(prevPlayer);
+      this.state.activePlayer = getNextPlayerId(prevPlayer, this.activePlayerOrder);
       this.state.phase = 'NEED_ROLL';
       this.state.turnCount++;
 
@@ -346,6 +368,13 @@ export class LudoGameEngine {
     }
     if (options?.maxConsecutiveSixes !== undefined) {
       this.maxConsecutiveSixes = options.maxConsecutiveSixes;
+    }
+    if (options?.activePlayers && options.activePlayers.length >= 2) {
+      this.activePlayerOrder = options.activePlayers;
+    } else if (options?.playerCount === 3) {
+      this.activePlayerOrder = ['red', 'green', 'yellow'];
+    } else if (options?.playerCount === 4) {
+      this.activePlayerOrder = ['red', 'green', 'yellow', 'blue'];
     }
     this.state = this.createInitialState(options?.firstPlayer ?? 'red');
     this.emitEvent('TURN_CHANGED', 'A new Game of Destiny has begun.');

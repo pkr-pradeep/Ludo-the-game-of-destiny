@@ -131,7 +131,7 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
       <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-[#d4af37]" aria-hidden="true" />
 
       {/* The 15x15 Grid Arena */}
-      <div className="relative w-full h-full grid-cols-15 grid-rows-15 bg-[#121926] rounded-xl overflow-hidden border border-[#d4af37]/40 shadow-inner">
+      <div className="relative w-full h-full grid grid-cols-15 grid-rows-15 bg-[#121926] rounded-xl overflow-hidden border border-[#d4af37]/40 shadow-inner">
         {/* Render cells for the structural board */}
         {Array.from({ length: 15 }).map((_, r) =>
           Array.from({ length: 15 }).map((_, c) => {
@@ -164,14 +164,14 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
               return (
                 <div
                   key="yard-green"
-                  className={`col-span-6 row-span-6 p-2 border-r-2 border-b-2 border-[#d4af37]/60 relative flex flex-col items-center justify-between transition-all ${
+                  className={`border-r-2 border-b-2 border-[#d4af37]/60 relative flex flex-col items-center justify-between transition-all ${
                     isGreenActive
                       ? 'bg-gradient-to-br from-[#14532d] to-[#0a2f18]'
                       : 'bg-gradient-to-br from-[#1b253b]/40 to-[#0e1726]/40 opacity-70'
                   }`}
-                  style={{ gridColumn: 'span 6 / span 6', gridRow: 'span 6 / span 6' }}
+                  style={{ gridRow: '1 / span 6', gridColumn: '1 / span 6' }}
                 >
-                  <div className="w-full flex justify-between items-center px-1 text-[10px] sm:text-xs font-cinzel text-[#86efac] tracking-wider uppercase font-semibold">
+                  <div className="w-full flex justify-between items-center px-2 pt-1 text-[10px] sm:text-xs font-cinzel text-[#86efac] tracking-wider uppercase font-semibold">
                     <span className="flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-[#22c55e]" />
                       Utkala Vana
@@ -184,11 +184,21 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                       const coord = getTokenCoordinate('green', slotIdx, -1);
                       const key = `${coord.row.toFixed(1)}_${coord.col.toFixed(1)}`;
                       const tokensHere = cellTokensMap.get(key) || [];
+                      const isSlotMovable = tokensHere.length > 0 && tokensHere[0].isMovable;
 
                       return (
                         <div
                           key={`yard-green-${slotIdx}`}
-                          className="rounded-full bg-[#14532d]/60 border border-[#22c55e]/30 flex items-center justify-center p-0.5 shadow-sm"
+                          onClick={() => {
+                            if (isSlotMovable) {
+                              onTokenClick(tokensHere[0].tokenId);
+                            }
+                          }}
+                          className={`rounded-full border flex items-center justify-center p-0.5 shadow-sm transition-all duration-200 ${
+                            isSlotMovable
+                              ? 'bg-[#15803d] border-[#ffd700] ring-2 ring-[#ffd700]/80 cursor-pointer animate-pulse hover:scale-110 z-20'
+                              : 'bg-[#14532d]/60 border-[#22c55e]/30'
+                          }`}
                         >
                           {tokensHere.length > 0 && (
                             <TokenPiece
@@ -212,14 +222,14 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
               return (
                 <div
                   key="yard-yellow"
-                  className={`col-span-6 row-span-6 p-2 border-l-2 border-b-2 border-[#d4af37]/60 relative flex flex-col items-center justify-between ${
+                  className={`border-l-2 border-b-2 border-[#d4af37]/60 relative flex flex-col items-center justify-between ${
                     isYellowActive
                       ? 'bg-gradient-to-br from-[#b45309] to-[#78350f]'
                       : 'bg-gradient-to-br from-[#1e1710]/80 to-[#120d09]/80 opacity-75'
                   }`}
-                  style={{ gridColumn: 'span 6 / span 6', gridRow: 'span 6 / span 6' }}
+                  style={{ gridRow: '1 / span 6', gridColumn: '10 / span 6' }}
                 >
-                  <div className="w-full flex justify-between items-center px-1 text-[10px] sm:text-xs font-cinzel text-[#fde047] tracking-wider uppercase font-semibold">
+                  <div className="w-full flex justify-between items-center px-2 pt-1 text-[10px] sm:text-xs font-cinzel text-[#fde047] tracking-wider uppercase font-semibold">
                     <span className="opacity-75">Surya Rath</span>
                     <span className="text-[#d4af37]/60">☸</span>
                   </div>
@@ -228,11 +238,21 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                       const coord = getTokenCoordinate('yellow', slotIdx, -1);
                       const key = `${coord.row.toFixed(1)}_${coord.col.toFixed(1)}`;
                       const tokensHere = cellTokensMap.get(key) || [];
+                      const isSlotMovable = tokensHere.length > 0 && tokensHere[0].isMovable;
 
                       return (
                         <div
                           key={`yard-yellow-${slotIdx}`}
-                          className="rounded-full bg-[#2a1d12]/60 border border-[#d4af37]/20 flex items-center justify-center p-0.5"
+                          onClick={() => {
+                            if (isSlotMovable) {
+                              onTokenClick(tokensHere[0].tokenId);
+                            }
+                          }}
+                          className={`rounded-full border flex items-center justify-center p-0.5 shadow-sm transition-all duration-200 ${
+                            isSlotMovable
+                              ? 'bg-[#b45309] border-[#ffd700] ring-2 ring-[#ffd700]/80 cursor-pointer animate-pulse hover:scale-110 z-20'
+                              : 'bg-[#2a1d12]/60 border-[#d4af37]/20'
+                          }`}
                         >
                           {tokensHere.length > 0 && (
                             <TokenPiece
@@ -246,7 +266,7 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                       );
                     })}
                   </div>
-                  <span className="text-[9px] font-cinzel text-[#d4af37]/50 tracking-wider">
+                  <span className="text-[9px] font-cinzel text-[#d4af37]/50 tracking-wider pb-1">
                     {isYellowActive ? 'Active House' : 'Dormant Sanctuary'}
                   </span>
                 </div>
@@ -258,19 +278,29 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
               return (
                 <div
                   key="yard-red"
-                  className="col-span-6 row-span-6 p-2 bg-gradient-to-br from-[#991b1b] to-[#450a0a] border-r-2 border-t-2 border-[#d4af37]/60 relative flex flex-col items-center justify-between"
-                  style={{ gridColumn: 'span 6 / span 6', gridRow: 'span 6 / span 6' }}
+                  className="bg-gradient-to-br from-[#991b1b] to-[#450a0a] border-r-2 border-t-2 border-[#d4af37]/60 relative flex flex-col items-center justify-between"
+                  style={{ gridRow: '10 / span 6', gridColumn: '1 / span 6' }}
                 >
                   <div className="w-[84%] h-[76%] rounded-xl bg-[#240505] border border-[#ef4444]/40 p-2 grid grid-cols-2 grid-rows-2 gap-2 shadow-inner mt-1">
                     {[0, 1, 2, 3].map((slotIdx) => {
                       const coord = getTokenCoordinate('red', slotIdx, -1);
                       const key = `${coord.row.toFixed(1)}_${coord.col.toFixed(1)}`;
                       const tokensHere = cellTokensMap.get(key) || [];
+                      const isSlotMovable = tokensHere.length > 0 && tokensHere[0].isMovable;
 
                       return (
                         <div
                           key={`yard-red-${slotIdx}`}
-                          className="rounded-full bg-[#991b1b]/60 border border-[#ef4444]/30 flex items-center justify-center p-0.5 shadow-sm"
+                          onClick={() => {
+                            if (isSlotMovable) {
+                              onTokenClick(tokensHere[0].tokenId);
+                            }
+                          }}
+                          className={`rounded-full border flex items-center justify-center p-0.5 shadow-sm transition-all duration-200 ${
+                            isSlotMovable
+                              ? 'bg-[#b91c1c] border-[#ffd700] ring-2 ring-[#ffd700]/80 cursor-pointer animate-pulse hover:scale-110 z-20'
+                              : 'bg-[#991b1b]/60 border-[#ef4444]/30'
+                          }`}
                         >
                           {tokensHere.length > 0 && (
                             <TokenPiece
@@ -284,7 +314,7 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                       );
                     })}
                   </div>
-                  <div className="w-full flex justify-between items-center px-1 text-[10px] sm:text-xs font-cinzel text-[#fca5a5] tracking-wider uppercase font-semibold">
+                  <div className="w-full flex justify-between items-center px-2 pb-1 text-[10px] sm:text-xs font-cinzel text-[#fca5a5] tracking-wider uppercase font-semibold">
                     <span className="flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-[#ef4444]" />
                       Kalinga Sena
@@ -301,23 +331,33 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
               return (
                 <div
                   key="yard-blue"
-                  className={`col-span-6 row-span-6 p-2 border-l-2 border-t-2 border-[#d4af37]/60 relative flex flex-col items-center justify-between ${
+                  className={`border-l-2 border-t-2 border-[#d4af37]/60 relative flex flex-col items-center justify-between ${
                     isBlueActive
                       ? 'bg-gradient-to-br from-[#1e3a8a] to-[#0f172a]'
                       : 'bg-gradient-to-br from-[#0c1322]/80 to-[#070b14]/80 opacity-75'
                   }`}
-                  style={{ gridColumn: 'span 6 / span 6', gridRow: 'span 6 / span 6' }}
+                  style={{ gridRow: '10 / span 6', gridColumn: '10 / span 6' }}
                 >
                   <div className="w-[84%] h-[76%] rounded-xl bg-[#091024] border border-[#3b82f6]/25 p-2 grid grid-cols-2 grid-rows-2 gap-2 shadow-inner mt-1">
                     {[0, 1, 2, 3].map((slotIdx) => {
                       const coord = getTokenCoordinate('blue', slotIdx, -1);
                       const key = `${coord.row.toFixed(1)}_${coord.col.toFixed(1)}`;
                       const tokensHere = cellTokensMap.get(key) || [];
+                      const isSlotMovable = tokensHere.length > 0 && tokensHere[0].isMovable;
 
                       return (
                         <div
                           key={`yard-blue-${slotIdx}`}
-                          className="rounded-full bg-[#1e3a8a]/40 border border-[#3b82f6]/20 flex items-center justify-center p-0.5"
+                          onClick={() => {
+                            if (isSlotMovable) {
+                              onTokenClick(tokensHere[0].tokenId);
+                            }
+                          }}
+                          className={`rounded-full border flex items-center justify-center p-0.5 shadow-sm transition-all duration-200 ${
+                            isSlotMovable
+                              ? 'bg-[#1e3a8a] border-[#ffd700] ring-2 ring-[#ffd700]/80 cursor-pointer animate-pulse hover:scale-110 z-20'
+                              : 'bg-[#091024]/60 border-[#3b82f6]/20'
+                          }`}
                         >
                           {tokensHere.length > 0 && (
                             <TokenPiece
@@ -331,7 +371,7 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                       );
                     })}
                   </div>
-                  <div className="w-full flex justify-between items-center px-1 text-[10px] sm:text-xs font-cinzel text-[#93c5fd] tracking-wider uppercase font-semibold">
+                  <div className="w-full flex justify-between items-center px-2 pb-1 text-[10px] sm:text-xs font-cinzel text-[#93c5fd] tracking-wider uppercase font-semibold">
                     <span className="opacity-75">Nilachala</span>
                     <span className="text-[#d4af37]/60">☸</span>
                   </div>
@@ -344,8 +384,8 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
               return (
                 <div
                   key="center-sanctuary"
-                  className="col-span-3 row-span-3 relative bg-[#1c1510] border-2 border-[#d4af37] shadow-2xl overflow-hidden flex items-center justify-center"
-                  style={{ gridColumn: 'span 3 / span 3', gridRow: 'span 3 / span 3' }}
+                  className="relative bg-[#1c1510] border-2 border-[#d4af37] shadow-2xl overflow-hidden flex items-center justify-center"
+                  style={{ gridRow: '7 / span 3', gridColumn: '7 / span 3' }}
                 >
                   {/* 4 Colored Triangular Wings Meeting in Center */}
                   {/* Top: Yellow (or dormant sandstone) */}
@@ -385,9 +425,14 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                     }}
                   />
 
-                  {/* Central Sacred Lotus / Konark Rosette */}
-                  <div className="relative z-10 w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#ffd700] via-[#d4af37] to-[#78350f] border-2 border-[#ffffff] flex items-center justify-center shadow-lg">
-                    <span className="text-sm sm:text-base font-cinzel font-bold text-[#1f160e]">ॐ</span>
+                  {/* Central Sacred Konark Wheel & Garbhagriha */}
+                  <div className="relative z-10 w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#ffd700] via-[#d4af37] to-[#78350f] border-2 border-[#ffffff] flex items-center justify-center shadow-lg overflow-hidden p-0.5">
+                    <img
+                      src="/assets/aistudio/image_ca70523e.png"
+                      alt="Konark Sun Temple Wheel"
+                      className="w-full h-full object-contain rounded-full select-none pointer-events-none drop-shadow-[0_0_6px_rgba(255,215,0,0.7)]"
+                      style={{ animation: 'spin 24s linear infinite' }}
+                    />
                   </div>
 
                   {/* Render Finished Tokens in Center Sanctuary for Active Players */}
@@ -446,16 +491,43 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
             const cellKey = `${r.toFixed(1)}_${c.toFixed(1)}`;
             const tokensOnThisCell = cellTokensMap.get(cellKey) || [];
 
+            // Interaction helpers:
+            const movableToken = tokensOnThisCell.find((t) => t.isMovable);
+            const isCurrentPlayerStart = meta.isStartSquare && meta.startColor === currentColor;
+            const baseExitMove = isCurrentPlayerStart ? availableMoves.find((m) => m.isBaseExit) : undefined;
+            const isClickableCell = Boolean(movableToken || baseExitMove);
+
+            const handleCellClick = () => {
+              if (movableToken) {
+                onTokenClick(movableToken.tokenId);
+              } else if (baseExitMove) {
+                onTokenClick(baseExitMove.tokenId);
+              }
+            };
+
             return (
               <div
                 key={`cell-${r}-${c}`}
-                className={`relative flex items-center justify-center border ${cellBorder} ${cellBg} transition-colors duration-150 overflow-hidden p-0.5`}
+                onClick={isClickableCell ? handleCellClick : undefined}
+                style={{ gridRowStart: r + 1, gridColumnStart: c + 1 }}
+                className={`relative flex items-center justify-center border ${cellBorder} ${cellBg} transition-colors duration-150 overflow-hidden p-0.5 ${
+                  isClickableCell ? 'cursor-pointer hover:brightness-125' : ''
+                } ${baseExitMove ? 'ring-2 ring-[#ffd700] ring-inset animate-pulse' : ''}`}
+                title={
+                  baseExitMove
+                    ? 'Start Square: Tap to enter token onto battlefield!'
+                    : movableToken
+                    ? 'Tap to move active token forward'
+                    : undefined
+                }
               >
                 {/* Safe Square Sacred Star Sigil */}
                 {meta.isSafe && tokensOnThisCell.length === 0 && (
                   <span
-                    className="text-[#ffd700] text-xs sm:text-sm font-bold opacity-80 select-none animate-pulse"
-                    title="Safe Square - Protected by Destiny"
+                    className={`text-xs sm:text-sm font-bold opacity-80 select-none ${
+                      baseExitMove ? 'text-[#ffffff] animate-bounce scale-125' : 'text-[#ffd700] animate-pulse'
+                    }`}
+                    title={baseExitMove ? 'Tap to enter token!' : 'Safe Square - Protected by Destiny'}
                     aria-label="Safe square"
                   >
                     ★

@@ -2,7 +2,7 @@
  * Reusable, framework-agnostic TypeScript types for Ludo: The Game of Destiny.
  */
 
-export type PlayerId = 'red' | 'green';
+export type PlayerId = 'red' | 'green' | 'yellow' | 'blue';
 
 export type TokenLocation = 'base' | 'track' | 'home' | 'goal';
 
@@ -88,4 +88,8 @@ export interface GameEngineOptions {
   maxConsecutiveSixes?: number;
   /** Custom dice roll provider (useful for deterministic tests) */
   diceRoller?: () => number;
+  /** Number of active players (2, 3, or 4). Defaults to 2. */
+  playerCount?: number;
+  /** Explicit list of active players in turn order */
+  activePlayers?: PlayerId[];
 }

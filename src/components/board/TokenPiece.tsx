@@ -32,21 +32,22 @@ export const TokenPiece: React.FC<TokenPieceProps> = ({
   return (
     <button
       type="button"
-      onClick={isMovable ? onClick : undefined}
+      onClick={(e) => {
+        if (isMovable && onClick) {
+          e.stopPropagation();
+          onClick();
+        }
+      }}
       disabled={!isMovable}
       title={`${faction.name} Token ${tokenId + 1}${
         isMovable ? ' (Tap to advance)' : ' (Cannot move this turn)'
       }`}
       aria-label={`${faction.name} Token ${tokenId + 1}${isMovable ? ' - Tap to move' : ''}`}
-      className={`relative group flex items-center justify-center p-0 select-none transition-transform duration-200 ${
+      className={`relative group flex items-center justify-center p-0 select-none transition-transform duration-200 w-full h-full min-w-[28px] min-h-[28px] ${
         isMovable
-          ? 'cursor-pointer hover:scale-120 active:scale-95 z-30'
+          ? 'cursor-pointer hover:scale-125 active:scale-95 z-30'
           : 'cursor-default opacity-90 z-10'
       }`}
-      style={{
-        width: isSmall ? '100%' : '100%',
-        height: isSmall ? '100%' : '100%',
-      }}
     >
       {/* Movable Pulsing Halo */}
       {isMovable && (

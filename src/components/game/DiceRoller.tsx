@@ -10,9 +10,13 @@ export interface DiceRollerProps {
   hasRolled: boolean;
   availableMovesCount: number;
   onRoll: () => void;
+  onAdvanceToken?: () => void;
+  advanceButtonLabel?: string;
   disabled?: boolean;
   captureMessage?: string | null;
   onDismissCapture?: () => void;
+  extraTurnToast?: string | null;
+  onDismissExtraTurn?: () => void;
 }
 
 export const DiceRoller: React.FC<DiceRollerProps> = ({
@@ -22,9 +26,13 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
   hasRolled,
   availableMovesCount,
   onRoll,
+  onAdvanceToken,
+  advanceButtonLabel,
   disabled = false,
   captureMessage,
   onDismissCapture,
+  extraTurnToast,
+  onDismissExtraTurn,
 }) => {
   const faction = FACTIONS[currentColor];
 
@@ -100,7 +108,25 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
     }
   };
 
-  const isRollActionAllowed = !disabled && !isRolling && !hasRolled;
+  const isRollActionAllowed = !disabled && !isRolling && !hasRolled && availableMovesCount === 0;
+  const canAdvance = !disabled && !isRolling && (hasRolled || availableMovesCount > 0) && availableMovesCount > 0;
+
+  const defaultActionText = diceValue === 6 ? 'Enter / Run Token' : 'Advance Token';
+  const actionButtonText = isRolling
+    ? 'Casting...'
+    : canAdvance
+    ? (advanceButtonLabel || defaultActionText)
+    : hasRolled
+    ? 'Awaiting Move'
+    : 'Cast Dice';
+
+  const handleActionClick = () => {
+    if (canAdvance && onAdvanceToken) {
+      onAdvanceToken();
+    } else if (isRollActionAllowed) {
+      onRoll();
+    }
+  };
 
   return (
     <div className="flex flex-col items-center justify-center gap-2.5 w-full select-none">
@@ -128,31 +154,55 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
         </div>
       )}
 
+      {/* Royal 6 Extra Turn Toast Banner */}
+      {extraTurnToast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="w-full flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-gradient-to-r from-[#b45309]/90 via-[#92400e] to-[#78350f] border border-[#fbbf24]/80 text-[#fef3c7] text-xs shadow-lg animate-in fade-in slide-in-from-top-2 duration-300"
+        >
+          <div className="flex items-center gap-1.5 truncate">
+            <Sparkles className="w-4 h-4 text-[#ffd700] shrink-0 animate-pulse" />
+            <span className="font-medium truncate font-cinzel tracking-wide">{extraTurnToast}</span>
+          </div>
+          {onDismissExtraTurn && (
+            <button
+              type="button"
+              onClick={onDismissExtraTurn}
+              className="text-[#fde68a] hover:text-white text-xs px-1 cursor-pointer font-bold"
+              aria-label="Dismiss extra turn announcement"
+            >
+              ×
+            </button>
+          )}
+        </div>
+      )}
+
       {/* Main Dice & Action Trigger Strip */}
       <div className="flex items-center justify-center gap-4 w-full">
         {/* Interactive 3D Ancient Dice Component */}
         <button
           type="button"
-          onClick={isRollActionAllowed ? onRoll : undefined}
-          disabled={!isRollActionAllowed}
+          onClick={handleActionClick}
+          disabled={!isRollActionAllowed && !canAdvance}
           aria-label={
             isRollActionAllowed
               ? `Cast dice for ${faction.name}`
-              : hasRolled
-              ? 'Dice rolled. Select a highlighted token to advance'
+              : canAdvance
+              ? `Tap to advance ${faction.name} token`
               : 'Rolling dice...'
           }
           title={
             isRollActionAllowed
               ? 'Tap to cast the dice of destiny'
-              : hasRolled
-              ? 'Select an active token on the board to move'
+              : canAdvance
+              ? 'Tap to advance token'
               : undefined
           }
           className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br from-[#dfd3c3] via-[#c8b69b] to-[#8c7355] border-2 border-[#d4af37] shadow-xl flex items-center justify-center transition-all duration-200 select-none ${
             isRolling
               ? 'rotate-180 scale-110 animate-spin cursor-wait'
-              : isRollActionAllowed
+              : isRollActionAllowed || canAdvance
               ? 'cursor-pointer hover:scale-105 active:scale-95 ring-2 ring-[#ffd700] shadow-[#d4af37]/50'
               : 'cursor-not-allowed opacity-90'
           }`}
@@ -165,19 +215,19 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
           {renderPips(diceValue)}
         </button>
 
-        {/* Primary Action Button: Cast Dice */}
+        {/* Primary Action Button: Cast Dice or Advance Token */}
         <button
           type="button"
-          onClick={isRollActionAllowed ? onRoll : undefined}
-          disabled={!isRollActionAllowed}
+          onClick={handleActionClick}
+          disabled={!isRollActionAllowed && !canAdvance}
           className={`min-h-[48px] px-6 py-2.5 rounded-xl font-cinzel font-bold text-sm tracking-wide uppercase transition-all duration-200 select-none shadow-lg active:scale-95 flex items-center justify-center gap-2 ${
-            !isRollActionAllowed
+            !isRollActionAllowed && !canAdvance
               ? 'bg-[#1e293b]/70 text-[#94a3b8]/50 border border-slate-700/50 cursor-not-allowed'
-              : 'bg-gradient-to-r from-[#d4af37] via-[#f59e0b] to-[#b45309] text-[#1c1510] hover:brightness-110 border border-[#ffd700] cursor-pointer shadow-[#d4af37]/30'
+              : 'bg-gradient-to-r from-[#d4af37] via-[#f59e0b] to-[#b45309] text-[#1c1510] hover:brightness-110 border border-[#ffd700] cursor-pointer shadow-[#d4af37]/30 ring-2 ring-[#ffd700]/60 animate-pulse'
           }`}
         >
-          <Dices className="w-4 h-4" />
-          <span>{isRolling ? 'Casting...' : hasRolled ? 'Token Awaiting' : 'Cast Dice'}</span>
+          {canAdvance ? <Sparkles className="w-4 h-4 text-[#1c1510]" /> : <Dices className="w-4 h-4" />}
+          <span>{actionButtonText}</span>
         </button>
       </div>
 
@@ -197,7 +247,7 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
         {!isRolling && hasRolled && availableMovesCount > 0 && (
           <span className="text-[#86efac] font-medium flex items-center gap-1.5 animate-pulse">
             <span className="w-2 h-2 rounded-full bg-[#22c55e]" />
-            Rolled <strong className="font-bold text-[#ffd700] text-sm">{diceValue}</strong>! Tap a glowing token on the board
+            Rolled <strong className="font-bold text-[#ffd700] text-sm">{diceValue}</strong>! Tap glowing token, start square, or button above
           </span>
         )}
         {!isRolling && hasRolled && availableMovesCount === 0 && (

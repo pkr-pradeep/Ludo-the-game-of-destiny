@@ -89,6 +89,8 @@ export const TRACK_COORDINATES: readonly BoardCoordinate[] = [
 export const START_TRACK_INDEX: Record<PlayerId, number> = {
   red: 0,
   green: 13,
+  yellow: 26,
+  blue: 39,
 };
 
 /**
@@ -114,6 +116,20 @@ export const HOME_COLUMNS: Record<PlayerId, readonly BoardCoordinate[]> = {
     { row: 7, col: 4 },  // step 54
     { row: 7, col: 5 },  // step 55
   ],
+  yellow: [
+    { row: 1, col: 7 },  // step 51
+    { row: 2, col: 7 },  // step 52
+    { row: 3, col: 7 },  // step 53
+    { row: 4, col: 7 },  // step 54
+    { row: 5, col: 7 },  // step 55
+  ],
+  blue: [
+    { row: 7, col: 13 }, // step 51
+    { row: 7, col: 12 }, // step 52
+    { row: 7, col: 11 }, // step 53
+    { row: 7, col: 10 }, // step 54
+    { row: 7, col: 9 },  // step 55
+  ],
 };
 
 /**
@@ -122,6 +138,8 @@ export const HOME_COLUMNS: Record<PlayerId, readonly BoardCoordinate[]> = {
 export const GOAL_COORDINATES: Record<PlayerId, BoardCoordinate> = {
   red: { row: 8, col: 7 },
   green: { row: 7, col: 6 },
+  yellow: { row: 6, col: 7 },
+  blue: { row: 7, col: 8 },
 };
 
 /**
@@ -139,6 +157,18 @@ export const BASE_SLOTS: Record<PlayerId, readonly BoardCoordinate[]> = {
     { row: 1.5, col: 3.5 },
     { row: 3.5, col: 1.5 },
     { row: 3.5, col: 3.5 },
+  ],
+  yellow: [
+    { row: 1.5, col: 10.5 },
+    { row: 1.5, col: 12.5 },
+    { row: 3.5, col: 10.5 },
+    { row: 3.5, col: 12.5 },
+  ],
+  blue: [
+    { row: 10.5, col: 10.5 },
+    { row: 10.5, col: 12.5 },
+    { row: 12.5, col: 10.5 },
+    { row: 12.5, col: 12.5 },
   ],
 };
 

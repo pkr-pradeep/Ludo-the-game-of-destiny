@@ -47,6 +47,7 @@ export interface MoveOption {
   tokenId: number;
   fromStep: number;
   toStep: number;
+  isBaseExit?: boolean;
   willCapture: boolean;
   capturedColor?: PlayerColor;
   capturedTokenId?: number;

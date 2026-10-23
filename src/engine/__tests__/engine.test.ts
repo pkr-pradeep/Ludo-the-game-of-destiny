@@ -37,6 +37,47 @@ describe('LudoGameEngine Deterministic Unit Tests', () => {
       assert.equal(stateAfter.players.red.tokens[0].coordinate.row, 13);
       assert.equal(stateAfter.players.red.tokens[0].coordinate.col, 6);
     });
+
+    it('notifies subscribers with phase NEED_MOVE immediately upon rolling a 6', () => {
+      const engine = new LudoGameEngine();
+      let capturedPhase: string | null = null;
+      engine.subscribe((state, event) => {
+        if (event?.type === 'DICE_ROLLED') {
+          capturedPhase = state.phase;
+        }
+      });
+      engine.roll(6);
+      assert.equal(capturedPhase, 'NEED_MOVE');
+    });
+
+    it('exits base on 6 and runs along track on subsequent extra-turn roll', () => {
+      const engine = new LudoGameEngine();
+      // Roll 6 to exit base
+      engine.roll(6);
+      engine.moveToken(0); // Token 0 is now at step 0 (Red Start Square)
+
+      // Player gets extra turn to roll again!
+      const stateAfterExit = engine.getState();
+      assert.equal(stateAfterExit.phase, 'NEED_ROLL');
+      assert.equal(stateAfterExit.activePlayer, 'red');
+
+      // Roll 4 on extra turn
+      engine.roll(4);
+      const stateAfterRoll4 = engine.getState();
+      assert.equal(stateAfterRoll4.phase, 'NEED_MOVE');
+      
+      // Token 0 can move to step 4
+      const move = stateAfterRoll4.legalMoves.find((m) => m.tokenId === 0);
+      assert.ok(move);
+      assert.equal(move.fromStep, 0);
+      assert.equal(move.toStep, 4);
+
+      // Execute move: token runs forward 4 steps
+      engine.moveToken(0);
+      const stateFinal = engine.getState();
+      assert.equal(stateFinal.players.red.tokens[0].step, 4);
+      assert.equal(stateFinal.activePlayer, 'green'); // Turn passes to green after normal roll
+    });
   });
 
   // 2. Movement
@@ -278,6 +319,67 @@ describe('LudoGameEngine Deterministic Unit Tests', () => {
       assert.throws(() => {
         engine.moveToken(0);
       }, /Game has already ended/);
+    });
+  });
+
+  // 10. Multi-Player Faction Modes (3 & 4 Players)
+  describe('Multi-Player Configuration and Factions', () => {
+    it('supports 3-player mode rotating Red -> Green -> Yellow -> Red', () => {
+      const engine = new LudoGameEngine({ playerCount: 3, firstPlayer: 'red' });
+      assert.equal(engine.getState().activePlayer, 'red');
+
+      // Red rolls non-6 with no legal moves -> turn passes to Green
+      engine.roll(3);
+      assert.equal(engine.getState().activePlayer, 'green');
+
+      // Green rolls non-6 with no legal moves -> turn passes to Yellow
+      engine.roll(2);
+      assert.equal(engine.getState().activePlayer, 'yellow');
+
+      // Yellow rolls non-6 with no legal moves -> turn passes back to Red
+      engine.roll(4);
+      assert.equal(engine.getState().activePlayer, 'red');
+    });
+
+    it('supports 4-player mode rotating Red -> Green -> Yellow -> Blue -> Red', () => {
+      const engine = new LudoGameEngine({ playerCount: 4, firstPlayer: 'red' });
+      assert.equal(engine.getState().activePlayer, 'red');
+
+      engine.roll(3); // Red turn lost
+      assert.equal(engine.getState().activePlayer, 'green');
+
+      engine.roll(2); // Green turn lost
+      assert.equal(engine.getState().activePlayer, 'yellow');
+
+      engine.roll(4); // Yellow turn lost
+      assert.equal(engine.getState().activePlayer, 'blue');
+
+      engine.roll(5); // Blue turn lost
+      assert.equal(engine.getState().activePlayer, 'red');
+    });
+
+    it('allows Red to capture Blue in a 4-player game on standard track', () => {
+      const engine = new LudoGameEngine({ playerCount: 4, firstPlayer: 'red' });
+      // Red starts at index 0. Step 5 = absolute track index 5 (unsafe)
+      // Blue starts at index 39. Absolute track index 5 is (39 + 18) % 52 = 57 % 52 = 5!
+      // So Blue at step 18 is also at track index 5.
+      engine._setTokenStep('red', 0, 2); // Red token 0 at step 2 (track index 2)
+      engine._setTokenStep('blue', 0, 18); // Blue token 0 at track index 5
+
+      // Red rolls 3 to move from step 2 to step 5
+      engine.roll(3);
+      const state = engine.getState();
+      const move = state.legalMoves.find((m) => m.tokenId === 0);
+      assert.ok(move);
+      assert.equal(move.isCapture, true);
+      assert.equal(move.capturedToken?.player, 'blue');
+      assert.equal(move.capturedToken?.tokenId, 0);
+
+      engine.moveToken(0);
+      const after = engine.getState();
+      assert.equal(after.players.red.tokens[0].step, 5);
+      assert.equal(after.players.blue.tokens[0].step, -1); // Blue sent back to yard
+      assert.equal(after.players.blue.tokens[0].location, 'base');
     });
   });
 });

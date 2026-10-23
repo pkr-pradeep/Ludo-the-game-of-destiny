@@ -17,7 +17,7 @@ export interface GameScreenProps {
   onHome: () => void;
 }
 
-export const GameScreen: React.FC<GameScreenProps> = ({ onHome }) => {
+export const GameScreen: React.FC<GameScreenProps> = ({ playerCount = 2, onHome }) => {
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.getMuted());
   const [isRulesOpen, setIsRulesOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
@@ -39,12 +39,15 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onHome }) => {
     availableMoves,
     captureBanner,
     clearCaptureBanner,
+    extraTurnToast,
+    clearExtraTurnToast,
     logs,
     winner,
     rollDice,
     executeMove,
+    advanceActiveToken,
     restartGame,
-  } = useLudoGame();
+  } = useLudoGame({ playerCount });
 
   // Play gameplay BGM when entering GameScreen
   useEffect(() => {
@@ -85,6 +88,16 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onHome }) => {
     audioService.toggleMute();
   };
 
+  // Dynamic label for the direct advance action button
+  const hasBaseExit = availableMoves.some((m) => m.isBaseExit);
+  const hasTrackMove = availableMoves.some((m) => !m.isBaseExit);
+  const advanceButtonLabel =
+    hasTrackMove && hasBaseExit
+      ? 'Advance Token (or Tap Yard)'
+      : hasTrackMove
+      ? 'Advance Token'
+      : 'Enter Battlefield';
+
   return (
     <div className="min-h-screen w-full flex flex-col bg-temple-pattern relative overflow-x-hidden select-none">
       {/* Top Turn HUD */}
@@ -120,9 +133,13 @@ export const GameScreen: React.FC<GameScreenProps> = ({ onHome }) => {
             hasRolled={hasRolled}
             availableMovesCount={availableMoves.length}
             onRoll={rollDice}
+            onAdvanceToken={advanceActiveToken}
+            advanceButtonLabel={advanceButtonLabel}
             disabled={Boolean(winner)}
             captureMessage={captureBanner}
             onDismissCapture={clearCaptureBanner}
+            extraTurnToast={extraTurnToast}
+            onDismissExtraTurn={clearExtraTurnToast}
           />
         </div>
 
