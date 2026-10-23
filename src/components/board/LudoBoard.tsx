@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { PlayerColor, Player, MoveOption } from '../../types/game';
 import { FACTIONS, getTokenCoordinate } from '../../constants/boardData';
 import { TokenPiece } from './TokenPiece';
+import { KONARK_WHEEL_IMG_URL } from '../../utils/assets';
 
 export interface LudoBoardProps {
   players: Record<PlayerColor, Player>;
@@ -428,7 +429,7 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                   {/* Central Sacred Konark Wheel & Garbhagriha */}
                   <div className="relative z-10 w-9 h-9 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br from-[#ffd700] via-[#d4af37] to-[#78350f] border-2 border-[#ffffff] flex items-center justify-center shadow-lg overflow-hidden p-0.5">
                     <img
-                      src="/assets/aistudio/image_ca70523e.png"
+                      src={KONARK_WHEEL_IMG_URL}
                       alt="Konark Sun Temple Wheel"
                       className="w-full h-full object-contain rounded-full select-none pointer-events-none drop-shadow-[0_0_6px_rgba(255,215,0,0.7)]"
                       style={{ animation: 'spin 24s linear infinite' }}

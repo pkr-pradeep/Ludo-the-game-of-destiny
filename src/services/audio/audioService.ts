@@ -27,6 +27,8 @@ export interface AudioSettings {
 
 const SETTINGS_KEY = 'ludo_audio_settings_v1';
 
+import { getAssetUrl } from '../../utils/assets';
+
 class AudioService {
   private ctx: AudioContext | null = null;
   private settings: AudioSettings;
@@ -37,22 +39,22 @@ class AudioService {
 
   // Replaceable audio asset URLs (can point to local files or remote tracks)
   private bgmAssetMap: Record<BgmTrack, string> = {
-    home: '/assets/audio/bgm_home.mp3',
-    gameplay: '/assets/audio/bgm_gameplay.mp3',
-    krishna_victory: '/assets/audio/bgm_krishna.mp3',
-    shakuni_scene: '/assets/audio/bgm_shakuni.mp3',
+    home: getAssetUrl('assets/audio/bgm_home.mp3'),
+    gameplay: getAssetUrl('assets/audio/bgm_gameplay.mp3'),
+    krishna_victory: getAssetUrl('assets/audio/bgm_krishna.mp3'),
+    shakuni_scene: getAssetUrl('assets/audio/bgm_shakuni.mp3'),
   };
 
   private sfxAssetMap: Record<SfxEffect, string> = {
-    dice: '/assets/audio/sfx_dice.mp3',
-    movement: '/assets/audio/sfx_step.mp3',
-    capture: '/assets/audio/sfx_capture.mp3',
-    shakuni_laugh: '/assets/audio/sfx_shakuni_laugh.mp3',
-    coin_drop: '/assets/audio/sfx_coin_drop.mp3',
-    coin_reward: '/assets/audio/sfx_coin_reward.mp3',
-    win_bell: '/assets/audio/sfx_win_bell.mp3',
-    quiz_correct: '/assets/audio/sfx_quiz_correct.mp3',
-    quiz_incorrect: '/assets/audio/sfx_quiz_incorrect.mp3',
+    dice: getAssetUrl('assets/audio/sfx_dice.mp3'),
+    movement: getAssetUrl('assets/audio/sfx_step.mp3'),
+    capture: getAssetUrl('assets/audio/sfx_capture.mp3'),
+    shakuni_laugh: getAssetUrl('assets/audio/sfx_shakuni_laugh.mp3'),
+    coin_drop: getAssetUrl('assets/audio/sfx_coin_drop.mp3'),
+    coin_reward: getAssetUrl('assets/audio/sfx_coin_reward.mp3'),
+    win_bell: getAssetUrl('assets/audio/sfx_win_bell.mp3'),
+    quiz_correct: getAssetUrl('assets/audio/sfx_quiz_correct.mp3'),
+    quiz_incorrect: getAssetUrl('assets/audio/sfx_quiz_incorrect.mp3'),
   };
 
   constructor() {

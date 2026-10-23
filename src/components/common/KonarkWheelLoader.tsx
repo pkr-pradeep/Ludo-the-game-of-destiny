@@ -1,4 +1,5 @@
 import React from 'react';
+import { KONARK_WHEEL_IMG_URL } from '../../utils/assets';
 
 export interface KonarkWheelLoaderProps {
   /** Size in pixels or preset keyword */
@@ -70,7 +71,7 @@ export const KonarkWheelLoader: React.FC<KonarkWheelLoaderProps> = ({
         {/* Authentic Stone Chariot Wheel Photo Variant */}
         {variant === 'photo' ? (
           <img
-            src="/assets/aistudio/image_ca70523e.png"
+            src={KONARK_WHEEL_IMG_URL}
             alt="Konark Sun Temple Wheel"
             width={pixelSize}
             height={pixelSize}

@@ -8,6 +8,7 @@ import { CoinBucket } from '../components/coins/CoinBucket';
 import { LearnAndEarnModal } from '../components/quiz/LearnAndEarnModal';
 import { AudioSettingsModal } from '../components/settings/AudioSettingsModal';
 import { audioService } from '../services/audio/audioService';
+import { KONARK_WHEEL_IMG_URL } from '../utils/assets';
 
 export interface HomeScreenProps {
   onStartGame: (playerCount: 2 | 3 | 4) => void;
@@ -95,7 +96,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({ onStartGame }) => {
               {/* Subtle back ambient glow */}
               <div className="absolute inset-0 bg-radial from-[#d4af37]/20 via-transparent to-transparent pointer-events-none" />
               <img
-                src="/assets/aistudio/image_ca70523e.png"
+                src={KONARK_WHEEL_IMG_URL}
                 alt="Konark Sun Temple Wheel"
                 className="w-full h-full object-contain p-0.5 rounded-full select-none pointer-events-none drop-shadow-[0_0_10px_rgba(212,175,55,0.4)]"
                 style={{
