@@ -8,6 +8,7 @@ export interface DiceRollerProps {
   diceValue: number | null;
   isRolling: boolean;
   hasRolled: boolean;
+  isAutoMoving?: boolean;
   availableMovesCount: number;
   onRoll: () => void;
   onAdvanceToken?: () => void;
@@ -17,6 +18,7 @@ export interface DiceRollerProps {
   onDismissCapture?: () => void;
   extraTurnToast?: string | null;
   onDismissExtraTurn?: () => void;
+  playerColor?: PlayerColor;
 }
 
 export const DiceRoller: React.FC<DiceRollerProps> = ({
@@ -24,6 +26,7 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
   diceValue,
   isRolling,
   hasRolled,
+  isAutoMoving = false,
   availableMovesCount,
   onRoll,
   onAdvanceToken,
@@ -33,27 +36,33 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
   onDismissCapture,
   extraTurnToast,
   onDismissExtraTurn,
+  playerColor,
 }) => {
   const faction = FACTIONS[currentColor];
 
   // Render dice pips based on value (1..6)
   const renderPips = (val: number | null) => {
+    const pipClass =
+      'w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-[#0f172a] shadow-[inset_0_2px_4px_rgba(0,0,0,0.8),0_1px_1px_rgba(255,255,255,0.8)] border border-slate-900';
+    const rubyPipClass =
+      'w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-gradient-to-br from-[#ef4444] to-[#991b1b] shadow-[0_0_6px_rgba(239,68,68,0.7),inset_0_1px_2px_rgba(255,255,255,0.6)] border border-[#b91c1c]';
+
     if (!val) {
       return (
-        <div className="flex flex-col items-center justify-center text-xs font-cinzel text-[#d4af37]/80">
-          <Dices className="w-6 h-6 animate-pulse" />
-          <span className="text-[10px] mt-0.5 tracking-wider">ROLL</span>
+        <div className="flex flex-col items-center justify-center w-full h-full p-1 select-none">
+          <Dices className="w-8 h-8 sm:w-9 sm:h-9 text-[#b91c1c] drop-shadow-[0_2px_4px_rgba(185,28,28,0.4)] animate-bounce" />
+          <span className="text-[10px] sm:text-[11px] font-cinzel font-black tracking-widest text-[#991b1b] uppercase mt-0.5 bg-[#ffd700] px-2 py-0.5 rounded-full border border-[#b45309] shadow-md">
+            ROLL
+          </span>
         </div>
       );
     }
-
-    const pipClass = 'w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#1c1510] shadow-inner';
 
     switch (val) {
       case 1:
         return (
           <div className="w-full h-full flex items-center justify-center">
-            <span className={`${pipClass} w-3.5 h-3.5 sm:w-4 sm:h-4 bg-[#b91c1c] ring-1 ring-[#ffd700]`} />
+            <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gradient-to-br from-[#ef4444] to-[#991b1b] ring-2 ring-[#ffd700] shadow-[0_0_12px_rgba(239,68,68,0.8),inset_0_2px_4px_rgba(255,255,255,0.6)]" />
           </div>
         );
       case 2:
@@ -89,18 +98,18 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
               <span className={pipClass} />
               <span className={pipClass} />
             </div>
-            <span className={`${pipClass} absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ring-1 ring-[#b45309]`} />
+            <span className={`${rubyPipClass} absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 ring-1 ring-[#b45309]`} />
           </div>
         );
       case 6:
         return (
           <div className="w-full h-full grid grid-cols-2 grid-rows-3 p-1.5 sm:p-2 place-items-center">
-            <span className={`${pipClass} bg-[#b91c1c]`} />
-            <span className={`${pipClass} bg-[#b91c1c]`} />
-            <span className={`${pipClass} bg-[#b91c1c]`} />
-            <span className={`${pipClass} bg-[#b91c1c]`} />
-            <span className={`${pipClass} bg-[#b91c1c]`} />
-            <span className={`${pipClass} bg-[#b91c1c]`} />
+            <span className={rubyPipClass} />
+            <span className={rubyPipClass} />
+            <span className={rubyPipClass} />
+            <span className={rubyPipClass} />
+            <span className={rubyPipClass} />
+            <span className={rubyPipClass} />
           </div>
         );
       default:
@@ -114,6 +123,8 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
   const defaultActionText = diceValue === 6 ? 'Enter / Run Token' : 'Advance Token';
   const actionButtonText = isRolling
     ? 'Casting...'
+    : isAutoMoving
+    ? 'Auto-Advancing...'
     : canAdvance
     ? (advanceButtonLabel || defaultActionText)
     : hasRolled
@@ -179,54 +190,69 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
       )}
 
       {/* Main Dice & Action Trigger Strip */}
-      <div className="flex items-center justify-center gap-4 w-full">
+      <div className="flex items-center justify-center gap-4 sm:gap-6 w-full py-1">
         {/* Interactive 3D Ancient Dice Component */}
-        <button
-          type="button"
-          onClick={handleActionClick}
-          disabled={!isRollActionAllowed && !canAdvance}
-          aria-label={
-            isRollActionAllowed
-              ? `Cast dice for ${faction.name}`
-              : canAdvance
-              ? `Tap to advance ${faction.name} token`
-              : 'Rolling dice...'
-          }
-          title={
-            isRollActionAllowed
-              ? 'Tap to cast the dice of destiny'
-              : canAdvance
-              ? 'Tap to advance token'
-              : undefined
-          }
-          className={`relative w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-gradient-to-br from-[#dfd3c3] via-[#c8b69b] to-[#8c7355] border-2 border-[#d4af37] shadow-xl flex items-center justify-center transition-all duration-200 select-none ${
-            isRolling
-              ? 'rotate-180 scale-110 animate-spin cursor-wait'
-              : isRollActionAllowed || canAdvance
-              ? 'cursor-pointer hover:scale-105 active:scale-95 ring-2 ring-[#ffd700] shadow-[#d4af37]/50'
-              : 'cursor-not-allowed opacity-90'
-          }`}
-          style={{
-            boxShadow: `0 6px 16px -2px rgba(0,0,0,0.6), 0 0 14px ${faction.glowHex}40`,
-          }}
-        >
-          {/* Subtle ivory corner accents */}
-          <div className="absolute inset-0.5 rounded-lg border border-[#ffffff]/40 pointer-events-none" />
-          {renderPips(diceValue)}
-        </button>
+        <div className="relative flex flex-col items-center">
+          {/* Floating 'TAP TO ROLL' Badge when it's time to roll */}
+          {isRollActionAllowed && (
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 z-20 px-2 py-0.5 rounded-full bg-gradient-to-r from-[#ffd700] via-[#f59e0b] to-[#ffd700] text-[#1c1510] text-[9px] font-cinzel font-black tracking-wider uppercase shadow-[0_2px_8px_rgba(0,0,0,0.5)] border border-white whitespace-nowrap animate-bounce pointer-events-none">
+              TAP TO ROLL
+            </div>
+          )}
+
+          <button
+            type="button"
+            onClick={handleActionClick}
+            disabled={!isRollActionAllowed && !canAdvance}
+            aria-label={
+              isRollActionAllowed
+                ? `Cast dice for ${faction.name}`
+                : canAdvance
+                ? `Tap to advance ${faction.name} token`
+                : 'Rolling dice...'
+            }
+            title={
+              isRollActionAllowed
+                ? 'Tap to cast the dice of destiny'
+                : canAdvance
+                ? 'Tap to advance token'
+                : undefined
+            }
+            className={`relative w-16 h-16 sm:w-18 sm:h-18 rounded-2xl bg-gradient-to-br from-[#ffffff] via-[#f8fafc] to-[#e2e8f0] border-2 border-[#d4af37] flex items-center justify-center transition-all duration-200 select-none ${
+              isRolling
+                ? 'rotate-180 scale-110 animate-spin cursor-wait'
+                : isRollActionAllowed || canAdvance
+                ? 'cursor-pointer hover:scale-108 active:scale-95 ring-4 ring-[#ffd700] ring-offset-2 ring-offset-[#0b1329] shadow-[0_0_24px_rgba(255,215,0,0.85),0_8px_20px_rgba(0,0,0,0.6)] animate-pulse'
+                : 'cursor-not-allowed opacity-90 shadow-md'
+            }`}
+            style={{
+              boxShadow: isRollActionAllowed
+                ? `0 10px 25px rgba(0,0,0,0.7), 0 0 24px rgba(255,215,0,0.8), inset 0 2px 4px rgba(255,255,255,1), inset 0 -3px 6px rgba(0,0,0,0.15)`
+                : `0 8px 18px rgba(0,0,0,0.6), inset 0 2px 4px rgba(255,255,255,0.9), inset 0 -2px 4px rgba(0,0,0,0.1)`,
+            }}
+          >
+            {/* Subtle ivory corner accents */}
+            <div className="absolute inset-0.5 rounded-xl border border-[#ffffff] pointer-events-none" />
+            {renderPips(diceValue)}
+          </button>
+        </div>
 
         {/* Primary Action Button: Cast Dice or Advance Token */}
         <button
           type="button"
           onClick={handleActionClick}
           disabled={!isRollActionAllowed && !canAdvance}
-          className={`min-h-[48px] px-6 py-2.5 rounded-xl font-cinzel font-bold text-sm tracking-wide uppercase transition-all duration-200 select-none shadow-lg active:scale-95 flex items-center justify-center gap-2 ${
+          className={`min-h-[50px] px-6 py-2.5 rounded-xl font-cinzel font-black text-sm tracking-wide uppercase transition-all duration-200 select-none shadow-xl active:scale-95 flex items-center justify-center gap-2.5 ${
             !isRollActionAllowed && !canAdvance
               ? 'bg-[#1e293b]/70 text-[#94a3b8]/50 border border-slate-700/50 cursor-not-allowed'
-              : 'bg-gradient-to-r from-[#d4af37] via-[#f59e0b] to-[#b45309] text-[#1c1510] hover:brightness-110 border border-[#ffd700] cursor-pointer shadow-[#d4af37]/30 ring-2 ring-[#ffd700]/60 animate-pulse'
+              : 'bg-gradient-to-r from-[#ffd700] via-[#f59e0b] to-[#d97706] text-[#1c1510] hover:brightness-110 border-2 border-[#ffd700] cursor-pointer shadow-[0_0_20px_rgba(255,215,0,0.5)] ring-2 ring-[#ffd700]/80'
           }`}
         >
-          {canAdvance ? <Sparkles className="w-4 h-4 text-[#1c1510]" /> : <Dices className="w-4 h-4" />}
+          {canAdvance ? (
+            <Sparkles className="w-5 h-5 text-[#1c1510]" />
+          ) : (
+            <Dices className="w-5 h-5 text-[#1c1510] animate-bounce" />
+          )}
           <span>{actionButtonText}</span>
         </button>
       </div>
@@ -241,14 +267,26 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
         )}
         {!isRolling && !hasRolled && (
           <span className="text-[#e2d5c3]/90">
-            {faction.name}'s Turn · Tap <strong className="text-[#ffd700]">Cast Dice</strong>
+            {currentColor === playerColor ? (
+              <span className="text-[#ffd700] font-semibold">Your Turn ({faction.name})</span>
+            ) : (
+              <span>{faction.name}'s Turn</span>
+            )}
+            {' · Tap '}<strong className="text-[#ffd700]">Cast Dice</strong>
           </span>
         )}
         {!isRolling && hasRolled && availableMovesCount > 0 && (
-          <span className="text-[#86efac] font-medium flex items-center gap-1.5 animate-pulse">
-            <span className="w-2 h-2 rounded-full bg-[#22c55e]" />
-            Rolled <strong className="font-bold text-[#ffd700] text-sm">{diceValue}</strong>! Tap glowing token, start square, or button above
-          </span>
+          isAutoMoving ? (
+            <span className="text-[#ffd700] font-semibold flex items-center gap-1.5 animate-pulse">
+              <Sparkles className="w-4 h-4 text-[#ffd700]" />
+              Single token active · Auto-advancing forward {diceValue} steps...
+            </span>
+          ) : (
+            <span className="text-[#86efac] font-medium flex items-center gap-1.5 animate-pulse">
+              <span className="w-2 h-2 rounded-full bg-[#22c55e]" />
+              Rolled <strong className="font-bold text-[#ffd700] text-sm">{diceValue}</strong>! Tap glowing token, start square, or button above
+            </span>
+          )
         )}
         {!isRolling && hasRolled && availableMovesCount === 0 && (
           <span className="text-[#fca5a5] flex items-center gap-1">

@@ -37,10 +37,10 @@ export function getOpponentId(
   player: PlayerId,
   activeOrder?: PlayerId[]
 ): PlayerId {
-  if (!activeOrder || activeOrder.length === 2) {
-    return player === 'red' ? 'green' : 'red';
+  if (activeOrder && activeOrder.length > 0) {
+    return getNextPlayerId(player, activeOrder);
   }
-  return getNextPlayerId(player, activeOrder);
+  return player === 'red' ? 'green' : 'red';
 }
 
 /**
@@ -168,4 +168,65 @@ export function computeLegalMoves(
  */
 export function isPlayerVictor(player: PlayerState): boolean {
   return player.tokens.length === 4 && player.tokens.every((t) => t.step === MAX_STEP);
+}
+
+/**
+ * Swift Advance Rule (Time Saver):
+ * If only one token is enabled on board (step >= 0 and step < MAX_STEP),
+ * then it will move forward automatically based on the number generated through
+ * rolling dice until a second token comes to play.
+ *
+ * - When a 6 is rolled and tokens remain in yard (step === -1), a second token CAN
+ *   come to play or the existing token can advance. In that case, returns null to
+ *   give the player the strategic choice.
+ * - When 0 tokens are on board and 6 is rolled, the only legal move is base exit,
+ *   so deploying the first token automatically saves time.
+ * - When 2 or more tokens are enabled on board, returns null (player must choose).
+ */
+export function getAutoAdvanceTokenId(
+  player: PlayerState,
+  roll: number,
+  legalMoves: Move[]
+): number | null {
+  if (!legalMoves || legalMoves.length === 0) {
+    return null;
+  }
+
+  const activeTokensOnBoard = player.tokens.filter(
+    (t) => t.step >= 0 && t.step < MAX_STEP
+  );
+
+  // Case 1: Exactly one token is enabled on board
+  if (activeTokensOnBoard.length === 1) {
+    const singleToken = activeTokensOnBoard[0];
+    const canSingleTokenMove = legalMoves.some((m) => m.tokenId === singleToken.id);
+
+    // If 6 is rolled and yard has tokens, second token CAN come to play
+    const canBringSecondToken =
+      roll === 6 &&
+      player.tokens.some((t) => t.step === -1) &&
+      legalMoves.some((m) => m.isBaseExit);
+
+    // Give player choice when a second token can be brought to play
+    if (canBringSecondToken) {
+      return null;
+    }
+
+    if (canSingleTokenMove) {
+      return singleToken.id;
+    }
+
+    return null;
+  }
+
+  // Case 2: Zero tokens on board and rolled a 6 -> deploy the first token
+  if (activeTokensOnBoard.length === 0 && roll === 6) {
+    const baseExitMove = legalMoves.find((m) => m.isBaseExit);
+    if (baseExitMove) {
+      return baseExitMove.tokenId;
+    }
+  }
+
+  // 2 or more tokens enabled on board -> manual selection
+  return null;
 }

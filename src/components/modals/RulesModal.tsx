@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, ShieldCheck, Flame, Award, Compass } from 'lucide-react';
+import { X, ShieldCheck, Flame, Award, Compass, Zap } from 'lucide-react';
 
 export interface RulesModalProps {
   isOpen: boolean;
@@ -71,6 +71,14 @@ export const RulesModal: React.FC<RulesModalProps> = ({ isOpen, onClose }) => {
               <div>
                 <strong className="text-white block font-medium">4. The Central Garbhagriha</strong>
                 <span>After completing a clockwise pilgrimage around the 52 perimeter squares, guide your tokens down your sacred home path. An exact dice roll is required to enter the center. The first faction to bring all 4 tokens to the center claims victory!</span>
+              </div>
+            </div>
+
+            <div className="flex items-start gap-3">
+              <Zap className="w-5 h-5 text-[#22c55e] shrink-0 mt-0.5" />
+              <div>
+                <strong className="text-white block font-medium">5. Swift Advance (Time-Saver)</strong>
+                <span>When only one token is active on the board, it automatically moves forward with your dice roll to save time, until a second token comes to play!</span>
               </div>
             </div>
           </div>

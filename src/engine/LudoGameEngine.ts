@@ -47,7 +47,11 @@ export class LudoGameEngine {
     } else {
       this.activePlayerOrder = ['red', 'green'];
     }
-    this.state = this.createInitialState(options?.firstPlayer ?? 'red');
+    const startingPlayer =
+      options?.firstPlayer && this.activePlayerOrder.includes(options.firstPlayer)
+        ? options.firstPlayer
+        : this.activePlayerOrder[0];
+    this.state = this.createInitialState(startingPlayer);
   }
 
   private createInitialTokens(player: PlayerId): TokenState[] {
@@ -375,8 +379,14 @@ export class LudoGameEngine {
       this.activePlayerOrder = ['red', 'green', 'yellow'];
     } else if (options?.playerCount === 4) {
       this.activePlayerOrder = ['red', 'green', 'yellow', 'blue'];
+    } else if (options?.playerCount === 2) {
+      this.activePlayerOrder = ['red', 'green'];
     }
-    this.state = this.createInitialState(options?.firstPlayer ?? 'red');
+    const startingPlayer =
+      options?.firstPlayer && this.activePlayerOrder.includes(options.firstPlayer)
+        ? options.firstPlayer
+        : this.activePlayerOrder[0];
+    this.state = this.createInitialState(startingPlayer);
     this.emitEvent('TURN_CHANGED', 'A new Game of Destiny has begun.');
   }
 

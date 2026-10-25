@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
-import { HomeScreen } from './pages/HomeScreen';
+import { HomeScreen, StartGameConfig } from './pages/HomeScreen';
 import { GameScreen } from './pages/GameScreen';
+import { PlayerColor } from './types/game';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<'home' | 'game'>('home');
   const [playerCount, setPlayerCount] = useState<2 | 3 | 4>(2);
+  const [playerColor, setPlayerColor] = useState<PlayerColor>('red');
+  const [activePlayers, setActivePlayers] = useState<PlayerColor[]>(['red', 'green']);
 
-  const handleStartGame = (count: 2 | 3 | 4) => {
-    setPlayerCount(count);
+  const handleStartGame = (config: StartGameConfig) => {
+    setPlayerCount(config.playerCount);
+    setPlayerColor(config.playerColor);
+    setActivePlayers(config.activePlayers);
     setCurrentView('game');
   };
 
@@ -20,7 +25,12 @@ export default function App() {
       {currentView === 'home' ? (
         <HomeScreen onStartGame={handleStartGame} />
       ) : (
-        <GameScreen playerCount={playerCount} onHome={handleReturnHome} />
+        <GameScreen
+          playerCount={playerCount}
+          playerColor={playerColor}
+          activePlayers={activePlayers}
+          onHome={handleReturnHome}
+        />
       )}
     </div>
   );

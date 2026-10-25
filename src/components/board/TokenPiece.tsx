@@ -45,24 +45,15 @@ export const TokenPiece: React.FC<TokenPieceProps> = ({
       aria-label={`${faction.name} Token ${tokenId + 1}${isMovable ? ' - Tap to move' : ''}`}
       className={`relative group flex items-center justify-center p-0 select-none transition-transform duration-200 w-full h-full min-w-[28px] min-h-[28px] ${
         isMovable
-          ? 'cursor-pointer hover:scale-125 active:scale-95 z-30'
+          ? 'cursor-pointer hover:scale-110 active:scale-95 z-20'
           : 'cursor-default opacity-90 z-10'
       }`}
     >
-      {/* Movable Pulsing Halo */}
-      {isMovable && (
-        <span
-          className="absolute -inset-1 rounded-full animate-ping opacity-80 pointer-events-none"
-          style={{ backgroundColor: faction.glowHex }}
-          aria-hidden="true"
-        />
-      )}
-
       {/* Main Token Medallion (Temple Seal Coin) */}
       <div
-        className={`relative ${containerStyle} rounded-full flex items-center justify-center shadow-lg transition-all duration-200 ${
+        className={`relative ${containerStyle} rounded-full flex items-center justify-center shadow-md transition-all duration-200 ${
           isMovable
-            ? 'ring-2 ring-[#ffd700] ring-offset-1 ring-offset-[#0b1329] shadow-[#d4af37]/60 scale-105'
+            ? 'ring-1.5 ring-[#ffd700] shadow-[#d4af37]/40'
             : 'shadow-black/70'
         }`}
         style={{
@@ -78,18 +69,9 @@ export const TokenPiece: React.FC<TokenPieceProps> = ({
               width: isSmall ? '4px' : '8px',
               height: isSmall ? '4px' : '8px',
               backgroundColor: isMovable ? '#ffffff' : faction.accentHex,
-              boxShadow: isMovable ? `0 0 6px ${faction.glowHex}` : 'none',
             }}
           />
         </div>
-
-        {/* Movable bouncing badge for larger sizes */}
-        {isMovable && !isSmall && (
-          <span
-            className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-[#ffd700] rounded-full border border-black animate-bounce pointer-events-none"
-            aria-hidden="true"
-          />
-        )}
       </div>
     </button>
   );

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { LudoGameEngine } from './LudoGameEngine';
 import { GameState, Move, PlayerId } from './types';
+import { getAutoAdvanceTokenId } from './rules';
 import { Player, PlayerColor, MoveOption, GameLogEntry } from '../types/game';
 import { FACTIONS, getTokenCoordinate } from '../constants/boardData';
 import { soundManager } from '../utils/sound';
@@ -14,11 +15,13 @@ export interface UseLudoGameReturn {
   diceValue: number | null;
   isRolling: boolean;
   hasRolled: boolean;
+  isAutoMoving: boolean;
   availableMoves: MoveOption[];
   captureBanner: string | null;
   clearCaptureBanner: () => void;
   extraTurnToast: string | null;
   clearExtraTurnToast: () => void;
+  playerColor: PlayerColor;
   logs: GameLogEntry[];
   winner: Player | null;
   rollDice: () => void;
@@ -29,14 +32,43 @@ export interface UseLudoGameReturn {
 
 export interface UseLudoGameOptions {
   playerCount?: number;
+  playerColor?: PlayerColor;
+  activePlayers?: PlayerColor[];
 }
 
 export function useLudoGame(options?: UseLudoGameOptions): UseLudoGameReturn {
   const pCount = options?.playerCount ?? 2;
+  const userColor: PlayerColor = options?.playerColor ?? 'red';
+
+  // Compute active factions in game
+  const activeColors: PlayerColor[] = useMemo(() => {
+    if (options?.activePlayers && options.activePlayers.length >= 2) {
+      return options.activePlayers;
+    }
+    if (pCount === 4) return ['red', 'green', 'yellow', 'blue'];
+    if (pCount === 3) {
+      const all: PlayerColor[] = ['red', 'green', 'yellow', 'blue'];
+      const rivals = all.filter((c) => c !== userColor);
+      return [userColor, rivals[0], rivals[1]];
+    }
+    // 2 players: userColor and opposite/rival
+    const rivalMap: Record<PlayerColor, PlayerColor> = {
+      red: 'green',
+      green: 'red',
+      yellow: 'blue',
+      blue: 'yellow',
+    };
+    return [userColor, rivalMap[userColor]];
+  }, [options?.activePlayers, pCount, userColor]);
+
   const engineRef = useRef<LudoGameEngine | null>(null);
 
   if (!engineRef.current) {
-    engineRef.current = new LudoGameEngine({ playerCount: pCount, firstPlayer: 'red' });
+    engineRef.current = new LudoGameEngine({
+      playerCount: pCount,
+      activePlayers: activeColors,
+      firstPlayer: userColor,
+    });
   }
 
   const engine = engineRef.current;
@@ -47,6 +79,17 @@ export function useLudoGame(options?: UseLudoGameOptions): UseLudoGameReturn {
   const [animatedRollDisplay, setAnimatedRollDisplay] = useState<number | null>(null);
   const [captureBanner, setCaptureBanner] = useState<string | null>(null);
   const [extraTurnToast, setExtraTurnToast] = useState<string | null>(null);
+  const [isAutoMoving, setIsAutoMoving] = useState<boolean>(false);
+  const autoMoveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const executeMoveRef = useRef<(tokenId: number) => void>(() => {});
+
+  const cancelAutoMove = useCallback(() => {
+    if (autoMoveTimeoutRef.current) {
+      clearTimeout(autoMoveTimeoutRef.current);
+      autoMoveTimeoutRef.current = null;
+    }
+    setIsAutoMoving(false);
+  }, []);
 
   // Subscribe to engine events for audio, state syncing, and capture messages
   useEffect(() => {
@@ -78,11 +121,13 @@ export function useLudoGame(options?: UseLudoGameOptions): UseLudoGameReturn {
         clearInterval(rollIntervalRef.current);
         rollIntervalRef.current = null;
       }
+      cancelAutoMove();
     };
-  }, [engine]);
+  }, [engine, cancelAutoMove]);
 
   // Roll dice with smooth tumble animation
   const rollDice = useCallback(() => {
+    cancelAutoMove();
     const currentEngineState = engine.getState();
     // Guard using both synchronous ref and engine's current state to eliminate race conditions
     if (
@@ -119,6 +164,27 @@ export function useLudoGame(options?: UseLudoGameOptions): UseLudoGameReturn {
           if (engine.getState().phase === 'NEED_ROLL') {
             const finalRoll = engine.roll();
             setAnimatedRollDisplay(finalRoll);
+
+            // Rule: if only one token is enabled on board, it will move forward
+            // automatically based on the dice roll until a second token comes to play (to save time)
+            const postRollState = engine.getState();
+            if (postRollState.phase === 'NEED_MOVE' && postRollState.currentRoll !== null) {
+              const activePl = postRollState.players[postRollState.activePlayer];
+              const autoTokenId = getAutoAdvanceTokenId(
+                activePl,
+                postRollState.currentRoll,
+                postRollState.legalMoves
+              );
+
+              if (autoTokenId !== null) {
+                setIsAutoMoving(true);
+                autoMoveTimeoutRef.current = setTimeout(() => {
+                  autoMoveTimeoutRef.current = null;
+                  setIsAutoMoving(false);
+                  executeMoveRef.current(autoTokenId);
+                }, 520);
+              }
+            }
           }
         } catch (err) {
           console.error('Error rolling dice:', err);
@@ -128,11 +194,12 @@ export function useLudoGame(options?: UseLudoGameOptions): UseLudoGameReturn {
         }
       }
     }, 55);
-  }, [engine]);
+  }, [engine, cancelAutoMove]);
 
   // Execute token move
   const executeMove = useCallback(
     (tokenId: number) => {
+      cancelAutoMove();
       const currentEngineState = engine.getState();
       if (
         currentEngineState.phase !== 'NEED_MOVE' ||
@@ -150,20 +217,29 @@ export function useLudoGame(options?: UseLudoGameOptions): UseLudoGameReturn {
         console.error('Error executing move:', err);
       }
     },
-    [engine]
+    [engine, cancelAutoMove]
   );
 
+  useEffect(() => {
+    executeMoveRef.current = executeMove;
+  }, [executeMove]);
+
   const restartGame = useCallback(() => {
+    cancelAutoMove();
     if (rollIntervalRef.current) {
       clearInterval(rollIntervalRef.current);
       rollIntervalRef.current = null;
     }
     isRollingRef.current = false;
-    engine.reset({ playerCount: pCount, firstPlayer: 'red' });
+    engine.reset({
+      playerCount: pCount,
+      activePlayers: activeColors,
+      firstPlayer: userColor,
+    });
     setAnimatedRollDisplay(null);
     setCaptureBanner(null);
     setIsRolling(false);
-  }, [engine, pCount]);
+  }, [engine, pCount, activeColors, userColor, cancelAutoMove]);
 
   const clearCaptureBanner = useCallback(() => {
     setCaptureBanner(null);
@@ -175,6 +251,7 @@ export function useLudoGame(options?: UseLudoGameOptions): UseLudoGameReturn {
 
   // Advance active movable token with single tap on action button
   const advanceActiveToken = useCallback(() => {
+    cancelAutoMove();
     const currentEngineState = engine.getState();
     if (
       currentEngineState.phase !== 'NEED_MOVE' ||
@@ -197,14 +274,7 @@ export function useLudoGame(options?: UseLudoGameOptions): UseLudoGameReturn {
     if (chosenMove) {
       executeMove(chosenMove.tokenId);
     }
-  }, [engine, executeMove]);
-
-  // Compute active factions in game
-  const activeColors: PlayerColor[] = useMemo(() => {
-    if (pCount === 3) return ['red', 'green', 'yellow'];
-    if (pCount === 4) return ['red', 'green', 'yellow', 'blue'];
-    return ['red', 'green'];
-  }, [pCount]);
+  }, [engine, executeMove, cancelAutoMove]);
 
   // Map pure engine players into UI Player structures
   const players = useMemo((): Record<PlayerColor, Player> => {
@@ -305,10 +375,12 @@ export function useLudoGame(options?: UseLudoGameOptions): UseLudoGameReturn {
     state,
     players,
     currentColor,
+    playerColor: userColor,
     activeColors,
     diceValue: isRolling ? animatedRollDisplay : state.currentRoll ?? animatedRollDisplay,
     isRolling,
     hasRolled: state.phase === 'NEED_MOVE',
+    isAutoMoving,
     availableMoves,
     captureBanner,
     clearCaptureBanner,

@@ -8,6 +8,7 @@ export interface TurnHUDProps {
   currentColor: PlayerColor;
   players: Record<PlayerColor, Player>;
   activeColors: PlayerColor[];
+  playerColor?: PlayerColor;
   isMuted: boolean;
   onToggleMute: () => void;
   onHome: () => void;
@@ -20,6 +21,7 @@ export const TurnHUD: React.FC<TurnHUDProps> = ({
   currentColor,
   players,
   activeColors,
+  playerColor,
   isMuted,
   onToggleMute,
   onHome,
@@ -65,8 +67,13 @@ export const TurnHUD: React.FC<TurnHUDProps> = ({
               }}
               aria-hidden="true"
             />
-            <h2 className="text-sm sm:text-base font-cinzel font-bold text-[#f5ecd8] tracking-wide truncate">
+            <h2 className="text-sm sm:text-base font-cinzel font-bold text-[#f5ecd8] tracking-wide truncate flex items-center gap-1.5">
               {currentFaction.name}
+              {currentColor === playerColor && (
+                <span className="text-[9px] px-1.5 py-0.2 rounded bg-[#ffd700] text-black font-sans font-extrabold uppercase tracking-tight shadow">
+                  YOU
+                </span>
+              )}
             </h2>
           </div>
           <span className="text-[11px] text-[#c8b69b]/80 truncate">
@@ -115,11 +122,12 @@ export const TurnHUD: React.FC<TurnHUDProps> = ({
           const f = FACTIONS[col];
           const p = players[col];
           const isCurrent = col === currentColor;
+          const isUser = col === playerColor;
 
           return (
             <div
               key={`hud-faction-${col}`}
-              className={`flex items-center gap-1.5 px-2 py-0.5 rounded transition-colors ${
+              className={`flex items-center gap-1 px-2 py-0.5 rounded transition-colors ${
                 isCurrent ? 'bg-[#d4af37]/15 text-[#ffd700] font-semibold' : 'text-[#c8b69b]/70'
               }`}
             >
@@ -128,6 +136,11 @@ export const TurnHUD: React.FC<TurnHUDProps> = ({
                 style={{ backgroundColor: f.accentHex }}
               />
               <span className="truncate max-w-[70px] sm:max-w-none">{f.shortName}</span>
+              {isUser && (
+                <span className="text-[8px] px-1 py-0 rounded bg-[#d4af37]/30 text-[#ffd700] font-bold">
+                  YOU
+                </span>
+              )}
               <span className="text-[10px] tabular-nums font-mono">({p.tokensFinished}/4)</span>
             </div>
           );

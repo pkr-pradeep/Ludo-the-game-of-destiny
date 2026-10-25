@@ -12,12 +12,22 @@ import { KrishnaVictoryModal } from '../components/character/KrishnaVictoryModal
 import { AudioSettingsModal } from '../components/settings/AudioSettingsModal';
 import { ScrollText, ChevronDown, ChevronUp } from 'lucide-react';
 
+import { PlayerColor } from '../types/game';
+import { FACTIONS } from '../constants/boardData';
+
 export interface GameScreenProps {
   playerCount?: number;
+  playerColor?: PlayerColor;
+  activePlayers?: PlayerColor[];
   onHome: () => void;
 }
 
-export const GameScreen: React.FC<GameScreenProps> = ({ playerCount = 2, onHome }) => {
+export const GameScreen: React.FC<GameScreenProps> = ({
+  playerCount = 2,
+  playerColor = 'red',
+  activePlayers,
+  onHome,
+}) => {
   const [isMuted, setIsMuted] = useState<boolean>(soundManager.getMuted());
   const [isRulesOpen, setIsRulesOpen] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
@@ -36,6 +46,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ playerCount = 2, onHome 
     diceValue,
     isRolling,
     hasRolled,
+    isAutoMoving,
     availableMoves,
     captureBanner,
     clearCaptureBanner,
@@ -47,22 +58,22 @@ export const GameScreen: React.FC<GameScreenProps> = ({ playerCount = 2, onHome 
     executeMove,
     advanceActiveToken,
     restartGame,
-  } = useLudoGame({ playerCount });
+  } = useLudoGame({ playerCount, playerColor, activePlayers });
 
   // Play gameplay BGM when entering GameScreen
   useEffect(() => {
     audioService.playBgm('gameplay');
   }, []);
 
-  // When human player wins (Red / Kalinga), trigger Shakuni defeat first, then Krishna victory!
+  // When human player's chosen faction wins, trigger Shakuni defeat first, then Krishna victory!
   useEffect(() => {
     if (winner && !hasTriggeredVictoryCinematic) {
       setHasTriggeredVictoryCinematic(true);
-      if (winner.color === 'red') {
+      if (winner.color === playerColor) {
         setShowShakuni(true);
       }
     }
-  }, [winner, hasTriggeredVictoryCinematic]);
+  }, [winner, hasTriggeredVictoryCinematic, playerColor]);
 
   const handleRestart = () => {
     restartGame();
@@ -105,6 +116,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({ playerCount = 2, onHome 
         currentColor={currentColor}
         players={players}
         activeColors={activeColors}
+        playerColor={playerColor}
         isMuted={isMuted}
         onToggleMute={handleToggleMute}
         onHome={onHome}
@@ -122,15 +134,20 @@ export const GameScreen: React.FC<GameScreenProps> = ({ playerCount = 2, onHome 
           availableMoves={availableMoves}
           onTokenClick={executeMove}
           activeColors={activeColors}
+          hasRolled={hasRolled}
+          isRolling={isRolling}
+          diceValue={diceValue}
         />
 
         {/* Dice Roller & Turn Instructions with Capture Banner */}
         <div className="w-full max-w-[min(94vw,500px)] bg-[#0d1629]/80 backdrop-blur-sm p-3 rounded-2xl border border-[#d4af37]/30 shadow-lg mt-1">
           <DiceRoller
             currentColor={currentColor}
+            playerColor={playerColor}
             diceValue={diceValue}
             isRolling={isRolling}
             hasRolled={hasRolled}
+            isAutoMoving={isAutoMoving}
             availableMovesCount={availableMoves.length}
             onRoll={rollDice}
             onAdvanceToken={advanceActiveToken}
@@ -192,13 +209,13 @@ export const GameScreen: React.FC<GameScreenProps> = ({ playerCount = 2, onHome 
       <KrishnaVictoryModal
         isOpen={showKrishna}
         matchId={matchId}
-        winnerName={winner?.name || 'Kalinga Warrior'}
+        winnerName={winner?.name || FACTIONS[playerColor].name}
         onClose={handleKrishnaClose}
         onPlayAgain={handleRestart}
       />
 
       {/* General Victory Modal for other winner scenarios */}
-      {winner && winner.color !== 'red' && !showShakuni && !showKrishna && (
+      {winner && winner.color !== playerColor && !showShakuni && !showKrishna && (
         <VictoryModal
           winner={winner}
           onPlayAgain={handleRestart}

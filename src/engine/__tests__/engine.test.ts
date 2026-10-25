@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { LudoGameEngine } from '../LudoGameEngine';
 import { DeterministicDiceRoller } from '../dice';
 import { MAX_STEP, TRACK_STEP_LIMIT, getAbsoluteTrackIndex } from '../boardPaths';
+import { getAutoAdvanceTokenId } from '../rules';
 
 describe('LudoGameEngine Deterministic Unit Tests', () => {
   // 1. Base Exits
@@ -380,6 +381,142 @@ describe('LudoGameEngine Deterministic Unit Tests', () => {
       assert.equal(after.players.red.tokens[0].step, 5);
       assert.equal(after.players.blue.tokens[0].step, -1); // Blue sent back to yard
       assert.equal(after.players.blue.tokens[0].location, 'base');
+    });
+
+    it('supports custom chosen player color and rival pairing (e.g. Yellow vs Blue)', () => {
+      const engine = new LudoGameEngine({
+        activePlayers: ['yellow', 'blue'],
+        firstPlayer: 'yellow',
+      });
+
+      const state = engine.getState();
+      assert.equal(state.activePlayer, 'yellow');
+      assert.deepEqual(Object.keys(state.players).sort(), ['blue', 'yellow'].sort());
+
+      // Yellow rolls 3 with no legal moves -> turn passes directly to Blue
+      engine.roll(3);
+      assert.equal(engine.getState().activePlayer, 'blue');
+
+      // Blue rolls 2 with no legal moves -> turn passes back to Yellow
+      engine.roll(2);
+      assert.equal(engine.getState().activePlayer, 'yellow');
+    });
+
+    it('supports custom starting player in 4-player game (e.g. Blue starts first)', () => {
+      const engine = new LudoGameEngine({
+        activePlayers: ['blue', 'red', 'green', 'yellow'],
+        firstPlayer: 'blue',
+      });
+
+      assert.equal(engine.getState().activePlayer, 'blue');
+      engine.roll(4); // Blue passes
+      assert.equal(engine.getState().activePlayer, 'red');
+    });
+  });
+
+  // 11. Swift Advance Rule (Time Saver)
+  describe('Swift Advance Rule (getAutoAdvanceTokenId)', () => {
+    it('automatically advances the single active token on rolls 1 to 5', () => {
+      const engine = new LudoGameEngine();
+      // Roll 6 and move token 0 onto the board (step 0)
+      engine.roll(6);
+      engine.moveToken(0);
+
+      // Now only token 0 is enabled on board (step 0), other 3 tokens are in yard
+      const redPlayer = engine.getState().players.red;
+      assert.equal(redPlayer.tokens.filter((t) => t.step >= 0 && t.step < MAX_STEP).length, 1);
+
+      // Roll 4 on extra turn
+      engine.roll(4);
+      const stateAfterRoll4 = engine.getState();
+
+      const autoId = getAutoAdvanceTokenId(
+        stateAfterRoll4.players.red,
+        4,
+        stateAfterRoll4.legalMoves
+      );
+
+      // Token 0 should be chosen automatically
+      assert.equal(autoId, 0);
+    });
+
+    it('does NOT auto-advance on a roll of 6 when yard tokens can be brought into play', () => {
+      const engine = new LudoGameEngine();
+      engine.roll(6);
+      engine.moveToken(0); // Token 0 is at step 0; tokens 1, 2, 3 are in yard
+
+      // Roll 6 on extra turn
+      engine.roll(6);
+      const stateAfterRoll6 = engine.getState();
+
+      const autoId = getAutoAdvanceTokenId(
+        stateAfterRoll6.players.red,
+        6,
+        stateAfterRoll6.legalMoves
+      );
+
+      // Returns null because player must be able to choose whether to bring second token into play!
+      assert.equal(autoId, null);
+    });
+
+    it('does NOT auto-advance when two tokens are enabled on the board', () => {
+      const engine = new LudoGameEngine();
+      // Deploy token 0
+      engine.roll(6);
+      engine.moveToken(0);
+
+      // Deploy token 1
+      engine.roll(6);
+      engine.moveToken(1);
+
+      const redPlayer = engine.getState().players.red;
+      assert.equal(redPlayer.tokens.filter((t) => t.step >= 0 && t.step < MAX_STEP).length, 2);
+
+      // Roll 3 on extra turn: both tokens can move
+      engine.roll(3);
+      const stateAfterRoll3 = engine.getState();
+
+      const autoId = getAutoAdvanceTokenId(
+        stateAfterRoll3.players.red,
+        3,
+        stateAfterRoll3.legalMoves
+      );
+
+      // Both tokens are in play, player must choose manually
+      assert.equal(autoId, null);
+    });
+
+    it('auto-deploys token 0 from yard when 0 tokens are on board and 6 is rolled', () => {
+      const engine = new LudoGameEngine();
+      engine.roll(6);
+      const state = engine.getState();
+
+      const autoId = getAutoAdvanceTokenId(
+        state.players.red,
+        6,
+        state.legalMoves
+      );
+
+      assert.equal(autoId, 0);
+    });
+
+    it('returns null when single token on board cannot move (overshoot past goal)', () => {
+      const engine = new LudoGameEngine();
+      engine.roll(6);
+      engine.moveToken(0);
+
+      // Manually set token 0 to step 54 (needs exact 2 to finish at 56)
+      const state = engine.getState();
+      state.players.red.tokens[0].step = 54;
+
+      // Legal moves for a roll of 5 would overshoot (54 + 5 = 59 > 56) -> no legal moves
+      const autoId = getAutoAdvanceTokenId(
+        state.players.red,
+        5,
+        [] // empty legal moves
+      );
+
+      assert.equal(autoId, null);
     });
   });
 });

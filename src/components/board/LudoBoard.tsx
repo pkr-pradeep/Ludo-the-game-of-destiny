@@ -10,6 +10,9 @@ export interface LudoBoardProps {
   availableMoves: MoveOption[];
   onTokenClick: (tokenId: number) => void;
   activeColors: PlayerColor[];
+  hasRolled?: boolean;
+  isRolling?: boolean;
+  diceValue?: number | null;
 }
 
 interface CellMeta {
@@ -29,6 +32,9 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
   availableMoves,
   onTokenClick,
   activeColors,
+  hasRolled = false,
+  isRolling = false,
+  diceValue = null,
 }) => {
   // Pre-calculate token positions and group overlapping tokens
   const tokensOnBoard = useMemo(() => {
@@ -162,25 +168,44 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
             // Compound Zone: Green Yard (Top Left: 6x6) - Utkala Vana
             if (isYardTopLeft) {
               const isGreenActive = activeColors.includes('green');
+              const isGreenTurn = currentColor === 'green';
+              const isGreenFlashing = isGreenActive && isGreenTurn && (hasRolled || isRolling);
+
               return (
                 <div
                   key="yard-green"
-                  className={`border-r-2 border-b-2 border-[#d4af37]/60 relative flex flex-col items-center justify-between transition-all ${
-                    isGreenActive
-                      ? 'bg-gradient-to-br from-[#14532d] to-[#0a2f18]'
-                      : 'bg-gradient-to-br from-[#1b253b]/40 to-[#0e1726]/40 opacity-70'
+                  className={`border-r-2 border-b-2 relative flex flex-col items-center justify-between transition-all duration-300 overflow-hidden ${
+                    isGreenFlashing
+                      ? 'house-flashing-active bg-gradient-to-br from-[#15803d] via-[#166534] to-[#0a2f18] border-r-2 border-b-2 border-[#ffd700]'
+                      : isGreenActive
+                      ? 'border-[#d4af37]/60 bg-gradient-to-br from-[#14532d] to-[#0a2f18]'
+                      : 'border-[#d4af37]/30 bg-gradient-to-br from-[#1b253b]/40 to-[#0e1726]/40 opacity-70'
                   }`}
                   style={{ gridRow: '1 / span 6', gridColumn: '1 / span 6' }}
                 >
-                  <div className="w-full flex justify-between items-center px-2 pt-1 text-[10px] sm:text-xs font-cinzel text-[#86efac] tracking-wider uppercase font-semibold">
+                  {/* Flashing Ambient Flare - Light & Contained */}
+                  {isGreenFlashing && (
+                    <div
+                      className="absolute inset-0 bg-radial from-[#22c55e]/15 via-[#ffd700]/10 to-transparent pointer-events-none"
+                      aria-hidden="true"
+                    />
+                  )}
+
+                  <div className="w-full flex justify-between items-center px-2 pt-1 text-[10px] sm:text-xs font-cinzel text-[#86efac] tracking-wider uppercase font-semibold z-10">
                     <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-[#22c55e]" />
+                      <span className={`w-2 h-2 rounded-full bg-[#22c55e] ${isGreenFlashing ? 'animate-ping' : ''}`} />
                       Utkala Vana
                     </span>
-                    <span className="text-[#d4af37]">★</span>
+                    {isGreenFlashing ? (
+                      <span className="house-flash-badge px-1.5 py-0.2 rounded-full bg-[#ffd700] text-black text-[9px] font-sans font-black uppercase tracking-tight shadow-md">
+                        {hasRolled && diceValue ? `⚡ ROLLED: ${diceValue}` : '🎲 ROLLING...'}
+                      </span>
+                    ) : (
+                      <span className="text-[#d4af37]">★</span>
+                    )}
                   </div>
                   {/* Inner Stone Pedestal for the 4 Yard Tokens */}
-                  <div className="w-[84%] h-[76%] rounded-xl bg-[#081f11] border border-[#22c55e]/40 p-2 grid grid-cols-2 grid-rows-2 gap-2 shadow-inner">
+                  <div className="w-[84%] h-[76%] rounded-xl bg-[#081f11] border border-[#22c55e]/40 p-2 grid grid-cols-2 grid-rows-2 gap-2 shadow-inner z-10">
                     {[0, 1, 2, 3].map((slotIdx) => {
                       const coord = getTokenCoordinate('green', slotIdx, -1);
                       const key = `${coord.row.toFixed(1)}_${coord.col.toFixed(1)}`;
@@ -197,7 +222,7 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                           }}
                           className={`rounded-full border flex items-center justify-center p-0.5 shadow-sm transition-all duration-200 ${
                             isSlotMovable
-                              ? 'bg-[#15803d] border-[#ffd700] ring-2 ring-[#ffd700]/80 cursor-pointer animate-pulse hover:scale-110 z-20'
+                              ? 'bg-[#15803d]/90 border-[#ffd700] cursor-pointer hover:scale-105 z-10'
                               : 'bg-[#14532d]/60 border-[#22c55e]/30'
                           }`}
                         >
@@ -220,21 +245,43 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
             // Compound Zone: Yellow Yard (Top Right: 6x6) - Surya Rath (Dormant in 2-Player mode)
             if (isYardTopRight) {
               const isYellowActive = activeColors.includes('yellow');
+              const isYellowTurn = currentColor === 'yellow';
+              const isYellowFlashing = isYellowActive && isYellowTurn && (hasRolled || isRolling);
+
               return (
                 <div
                   key="yard-yellow"
-                  className={`border-l-2 border-b-2 border-[#d4af37]/60 relative flex flex-col items-center justify-between ${
-                    isYellowActive
-                      ? 'bg-gradient-to-br from-[#b45309] to-[#78350f]'
-                      : 'bg-gradient-to-br from-[#1e1710]/80 to-[#120d09]/80 opacity-75'
+                  className={`border-l-2 border-b-2 relative flex flex-col items-center justify-between transition-all duration-300 overflow-hidden ${
+                    isYellowFlashing
+                      ? 'house-flashing-active bg-gradient-to-br from-[#d97706] via-[#b45309] to-[#78350f] border-l-2 border-b-2 border-[#ffd700]'
+                      : isYellowActive
+                      ? 'border-[#d4af37]/60 bg-gradient-to-br from-[#b45309] to-[#78350f]'
+                      : 'border-[#d4af37]/30 bg-gradient-to-br from-[#1e1710]/80 to-[#120d09]/80 opacity-75'
                   }`}
                   style={{ gridRow: '1 / span 6', gridColumn: '10 / span 6' }}
                 >
-                  <div className="w-full flex justify-between items-center px-2 pt-1 text-[10px] sm:text-xs font-cinzel text-[#fde047] tracking-wider uppercase font-semibold">
-                    <span className="opacity-75">Surya Rath</span>
-                    <span className="text-[#d4af37]/60">☸</span>
+                  {/* Flashing Ambient Flare - Light & Contained */}
+                  {isYellowFlashing && (
+                    <div
+                      className="absolute inset-0 bg-radial from-[#eab308]/15 via-[#ffd700]/10 to-transparent pointer-events-none"
+                      aria-hidden="true"
+                    />
+                  )}
+
+                  <div className="w-full flex justify-between items-center px-2 pt-1 text-[10px] sm:text-xs font-cinzel text-[#fde047] tracking-wider uppercase font-semibold z-10">
+                    <span className="flex items-center gap-1">
+                      <span className={`w-2 h-2 rounded-full bg-[#eab308] ${isYellowFlashing ? 'animate-ping' : ''}`} />
+                      Surya Rath
+                    </span>
+                    {isYellowFlashing ? (
+                      <span className="house-flash-badge px-1.5 py-0.2 rounded-full bg-[#ffd700] text-black text-[9px] font-sans font-black uppercase tracking-tight shadow-md">
+                        {hasRolled && diceValue ? `⚡ ROLLED: ${diceValue}` : '🎲 ROLLING...'}
+                      </span>
+                    ) : (
+                      <span className="text-[#d4af37]/60">☸</span>
+                    )}
                   </div>
-                  <div className="w-[84%] h-[76%] rounded-xl bg-[#1c130b] border border-[#d4af37]/25 p-2 grid grid-cols-2 grid-rows-2 gap-2 shadow-inner">
+                  <div className="w-[84%] h-[76%] rounded-xl bg-[#1c130b] border border-[#d4af37]/25 p-2 grid grid-cols-2 grid-rows-2 gap-2 shadow-inner z-10">
                     {[0, 1, 2, 3].map((slotIdx) => {
                       const coord = getTokenCoordinate('yellow', slotIdx, -1);
                       const key = `${coord.row.toFixed(1)}_${coord.col.toFixed(1)}`;
@@ -251,7 +298,7 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                           }}
                           className={`rounded-full border flex items-center justify-center p-0.5 shadow-sm transition-all duration-200 ${
                             isSlotMovable
-                              ? 'bg-[#b45309] border-[#ffd700] ring-2 ring-[#ffd700]/80 cursor-pointer animate-pulse hover:scale-110 z-20'
+                              ? 'bg-[#b45309]/90 border-[#ffd700] cursor-pointer hover:scale-105 z-10'
                               : 'bg-[#2a1d12]/60 border-[#d4af37]/20'
                           }`}
                         >
@@ -267,8 +314,8 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                       );
                     })}
                   </div>
-                  <span className="text-[9px] font-cinzel text-[#d4af37]/50 tracking-wider pb-1">
-                    {isYellowActive ? 'Active House' : 'Dormant Sanctuary'}
+                  <span className="text-[9px] font-cinzel text-[#d4af37]/70 tracking-wider pb-1 z-10">
+                    {isYellowFlashing ? '⚡ Active Roll' : isYellowActive ? 'Active House' : 'Dormant Sanctuary'}
                   </span>
                 </div>
               );
@@ -276,13 +323,31 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
 
             // Compound Zone: Red Yard (Bottom Left: 6x6) - Kalinga Sena
             if (isYardBottomLeft) {
+              const isRedActive = activeColors.includes('red');
+              const isRedTurn = currentColor === 'red';
+              const isRedFlashing = isRedActive && isRedTurn && (hasRolled || isRolling);
+
               return (
                 <div
                   key="yard-red"
-                  className="bg-gradient-to-br from-[#991b1b] to-[#450a0a] border-r-2 border-t-2 border-[#d4af37]/60 relative flex flex-col items-center justify-between"
+                  className={`border-r-2 border-t-2 relative flex flex-col items-center justify-between transition-all duration-300 overflow-hidden ${
+                    isRedFlashing
+                      ? 'house-flashing-active bg-gradient-to-br from-[#b91c1c] via-[#991b1b] to-[#450a0a] border-r-2 border-t-2 border-[#ffd700]'
+                      : isRedActive
+                      ? 'border-[#d4af37]/60 bg-gradient-to-br from-[#991b1b] to-[#450a0a]'
+                      : 'border-[#d4af37]/30 bg-gradient-to-br from-[#1e0f0f]/80 to-[#100606]/80 opacity-75'
+                  }`}
                   style={{ gridRow: '10 / span 6', gridColumn: '1 / span 6' }}
                 >
-                  <div className="w-[84%] h-[76%] rounded-xl bg-[#240505] border border-[#ef4444]/40 p-2 grid grid-cols-2 grid-rows-2 gap-2 shadow-inner mt-1">
+                  {/* Flashing Ambient Flare - Light & Contained */}
+                  {isRedFlashing && (
+                    <div
+                      className="absolute inset-0 bg-radial from-[#ef4444]/15 via-[#ffd700]/10 to-transparent pointer-events-none"
+                      aria-hidden="true"
+                    />
+                  )}
+
+                  <div className="w-[84%] h-[76%] rounded-xl bg-[#240505] border border-[#ef4444]/40 p-2 grid grid-cols-2 grid-rows-2 gap-2 shadow-inner mt-1 z-10">
                     {[0, 1, 2, 3].map((slotIdx) => {
                       const coord = getTokenCoordinate('red', slotIdx, -1);
                       const key = `${coord.row.toFixed(1)}_${coord.col.toFixed(1)}`;
@@ -299,7 +364,7 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                           }}
                           className={`rounded-full border flex items-center justify-center p-0.5 shadow-sm transition-all duration-200 ${
                             isSlotMovable
-                              ? 'bg-[#b91c1c] border-[#ffd700] ring-2 ring-[#ffd700]/80 cursor-pointer animate-pulse hover:scale-110 z-20'
+                              ? 'bg-[#b91c1c]/90 border-[#ffd700] cursor-pointer hover:scale-105 z-10'
                               : 'bg-[#991b1b]/60 border-[#ef4444]/30'
                           }`}
                         >
@@ -315,31 +380,52 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                       );
                     })}
                   </div>
-                  <div className="w-full flex justify-between items-center px-2 pb-1 text-[10px] sm:text-xs font-cinzel text-[#fca5a5] tracking-wider uppercase font-semibold">
+                  <div className="w-full flex justify-between items-center px-2 pb-1 text-[10px] sm:text-xs font-cinzel text-[#fca5a5] tracking-wider uppercase font-semibold z-10">
                     <span className="flex items-center gap-1">
-                      <span className="w-2 h-2 rounded-full bg-[#ef4444]" />
+                      <span className={`w-2 h-2 rounded-full bg-[#ef4444] ${isRedFlashing ? 'animate-ping' : ''}`} />
                       Kalinga Sena
                     </span>
-                    <span className="text-[#d4af37]">★</span>
+                    {isRedFlashing ? (
+                      <span className="house-flash-badge px-1.5 py-0.2 rounded-full bg-[#ffd700] text-black text-[9px] font-sans font-black uppercase tracking-tight shadow-md">
+                        {hasRolled && diceValue ? `⚡ ROLLED: ${diceValue}` : '🎲 ROLLING...'}
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-cinzel text-[#d4af37]/70 tracking-wider">
+                        {isRedActive ? 'Active House' : 'Dormant Sanctuary'}
+                      </span>
+                    )}
                   </div>
                 </div>
               );
             }
 
-            // Compound Zone: Blue Yard (Bottom Right: 6x6) - Nilachala (Dormant in 2-Player mode)
+            // Compound Zone: Blue Yard (Bottom Right: 6x6) - Nilachala
             if (isYardBottomRight) {
               const isBlueActive = activeColors.includes('blue');
+              const isBlueTurn = currentColor === 'blue';
+              const isBlueFlashing = isBlueActive && isBlueTurn && (hasRolled || isRolling);
+
               return (
                 <div
                   key="yard-blue"
-                  className={`border-l-2 border-t-2 border-[#d4af37]/60 relative flex flex-col items-center justify-between ${
-                    isBlueActive
-                      ? 'bg-gradient-to-br from-[#1e3a8a] to-[#0f172a]'
-                      : 'bg-gradient-to-br from-[#0c1322]/80 to-[#070b14]/80 opacity-75'
+                  className={`border-l-2 border-t-2 relative flex flex-col items-center justify-between transition-all duration-300 overflow-hidden ${
+                    isBlueFlashing
+                      ? 'house-flashing-active bg-gradient-to-br from-[#2563eb] via-[#1d4ed8] to-[#0f172a] border-l-2 border-t-2 border-[#ffd700]'
+                      : isBlueActive
+                      ? 'border-[#d4af37]/60 bg-gradient-to-br from-[#1e3a8a] to-[#0f172a]'
+                      : 'border-[#d4af37]/30 bg-gradient-to-br from-[#0c1322]/80 to-[#070b14]/80 opacity-75'
                   }`}
                   style={{ gridRow: '10 / span 6', gridColumn: '10 / span 6' }}
                 >
-                  <div className="w-[84%] h-[76%] rounded-xl bg-[#091024] border border-[#3b82f6]/25 p-2 grid grid-cols-2 grid-rows-2 gap-2 shadow-inner mt-1">
+                  {/* Flashing Ambient Flare - Light & Contained */}
+                  {isBlueFlashing && (
+                    <div
+                      className="absolute inset-0 bg-radial from-[#3b82f6]/15 via-[#ffd700]/10 to-transparent pointer-events-none"
+                      aria-hidden="true"
+                    />
+                  )}
+
+                  <div className="w-[84%] h-[76%] rounded-xl bg-[#091024] border border-[#3b82f6]/25 p-2 grid grid-cols-2 grid-rows-2 gap-2 shadow-inner mt-1 z-10">
                     {[0, 1, 2, 3].map((slotIdx) => {
                       const coord = getTokenCoordinate('blue', slotIdx, -1);
                       const key = `${coord.row.toFixed(1)}_${coord.col.toFixed(1)}`;
@@ -356,7 +442,7 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                           }}
                           className={`rounded-full border flex items-center justify-center p-0.5 shadow-sm transition-all duration-200 ${
                             isSlotMovable
-                              ? 'bg-[#1e3a8a] border-[#ffd700] ring-2 ring-[#ffd700]/80 cursor-pointer animate-pulse hover:scale-110 z-20'
+                              ? 'bg-[#1e3a8a]/90 border-[#ffd700] cursor-pointer hover:scale-105 z-10'
                               : 'bg-[#091024]/60 border-[#3b82f6]/20'
                           }`}
                         >
@@ -372,9 +458,20 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                       );
                     })}
                   </div>
-                  <div className="w-full flex justify-between items-center px-2 pb-1 text-[10px] sm:text-xs font-cinzel text-[#93c5fd] tracking-wider uppercase font-semibold">
-                    <span className="opacity-75">Nilachala</span>
-                    <span className="text-[#d4af37]/60">☸</span>
+                  <div className="w-full flex justify-between items-center px-2 pb-1 text-[10px] sm:text-xs font-cinzel text-[#93c5fd] tracking-wider uppercase font-semibold z-10">
+                    <span className="flex items-center gap-1">
+                      <span className={`w-2 h-2 rounded-full bg-[#3b82f6] ${isBlueFlashing ? 'animate-ping' : ''}`} />
+                      Nilachala Sena
+                    </span>
+                    {isBlueFlashing ? (
+                      <span className="house-flash-badge px-1.5 py-0.2 rounded-full bg-[#ffd700] text-black text-[9px] font-sans font-black uppercase tracking-tight shadow-md">
+                        {hasRolled && diceValue ? `⚡ ROLLED: ${diceValue}` : '🎲 ROLLING...'}
+                      </span>
+                    ) : (
+                      <span className="text-[9px] font-cinzel text-[#d4af37]/70 tracking-wider">
+                        {isBlueActive ? 'Active House' : 'Dormant Sanctuary'}
+                      </span>
+                    )}
                   </div>
                 </div>
               );
@@ -513,7 +610,7 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                 style={{ gridRowStart: r + 1, gridColumnStart: c + 1 }}
                 className={`relative flex items-center justify-center border ${cellBorder} ${cellBg} transition-colors duration-150 overflow-hidden p-0.5 ${
                   isClickableCell ? 'cursor-pointer hover:brightness-125' : ''
-                } ${baseExitMove ? 'ring-2 ring-[#ffd700] ring-inset animate-pulse' : ''}`}
+                } ${baseExitMove ? 'ring-1.5 ring-[#ffd700] ring-inset' : ''}`}
                 title={
                   baseExitMove
                     ? 'Start Square: Tap to enter token onto battlefield!'
@@ -526,7 +623,7 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                 {meta.isSafe && tokensOnThisCell.length === 0 && (
                   <span
                     className={`text-xs sm:text-sm font-bold opacity-80 select-none ${
-                      baseExitMove ? 'text-[#ffffff] animate-bounce scale-125' : 'text-[#ffd700] animate-pulse'
+                      baseExitMove ? 'text-[#ffffff] scale-110' : 'text-[#ffd700]'
                     }`}
                     title={baseExitMove ? 'Tap to enter token!' : 'Safe Square - Protected by Destiny'}
                     aria-label="Safe square"
