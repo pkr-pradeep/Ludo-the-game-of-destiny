@@ -8,14 +8,16 @@ export interface TokenPieceProps {
   isMovable: boolean;
   onClick?: () => void;
   size?: 'sm' | 'md' | 'full';
+  style?: React.CSSProperties;
 }
 
-export const TokenPiece: React.FC<TokenPieceProps> = ({
+export const TokenPiece: React.FC<TokenPieceProps> = React.memo(({
   color,
   tokenId,
   isMovable,
   onClick,
   size = 'full',
+  style,
 }) => {
   const faction = FACTIONS[color];
 
@@ -43,7 +45,8 @@ export const TokenPiece: React.FC<TokenPieceProps> = ({
         isMovable ? ' (Tap to advance)' : ' (Cannot move this turn)'
       }`}
       aria-label={`${faction.name} Token ${tokenId + 1}${isMovable ? ' - Tap to move' : ''}`}
-      className={`relative group flex items-center justify-center p-0 select-none transition-transform duration-200 w-full h-full min-w-[28px] min-h-[28px] ${
+      style={style}
+      className={`relative group flex items-center justify-center p-0 select-none transition-transform duration-200 w-full h-full min-w-[28px] min-h-[28px] gpu-accelerated ${
         isMovable
           ? 'cursor-pointer hover:scale-110 active:scale-95 z-20'
           : 'cursor-default opacity-90 z-10'
@@ -75,4 +78,4 @@ export const TokenPiece: React.FC<TokenPieceProps> = ({
       </div>
     </button>
   );
-};
+});

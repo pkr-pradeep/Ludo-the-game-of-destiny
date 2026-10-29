@@ -13,6 +13,7 @@ export interface LudoBoardProps {
   hasRolled?: boolean;
   isRolling?: boolean;
   diceValue?: number | null;
+  playerColor?: PlayerColor;
 }
 
 interface CellMeta {
@@ -26,7 +27,100 @@ interface CellMeta {
   startColor?: PlayerColor;
 }
 
-export const LudoBoard: React.FC<LudoBoardProps> = ({
+interface StaticCellInfo {
+  r: number;
+  c: number;
+  meta: CellMeta;
+  isYardTopLeft: boolean;
+  isYardTopRight: boolean;
+  isYardBottomLeft: boolean;
+  isYardBottomRight: boolean;
+  isCenterRoot: boolean;
+  isSkipped: boolean;
+}
+
+// Precompute static layout for the 15x15 board once to avoid recreation on every render
+const computeCellMeta = (row: number, col: number): CellMeta => {
+  // Yards (6x6 corners)
+  if (row < 6 && col < 6) return { row, col, type: 'yard_green' };
+  if (row < 6 && col > 8) return { row, col, type: 'yard_yellow' };
+  if (row > 8 && col < 6) return { row, col, type: 'yard_red' };
+  if (row > 8 && col > 8) return { row, col, type: 'yard_blue' };
+
+  // Center (3x3 sanctum)
+  if (row >= 6 && row <= 8 && col >= 6 && col <= 8) {
+    return { row, col, type: 'center' };
+  }
+
+  // Home Column Straights
+  if (col === 7 && row >= 1 && row <= 5) {
+    return { row, col, type: 'track', isHomePath: true, homePathColor: 'yellow' };
+  }
+  if (col === 7 && row >= 9 && row <= 13) {
+    return { row, col, type: 'track', isHomePath: true, homePathColor: 'red' };
+  }
+  if (row === 7 && col >= 1 && col <= 5) {
+    return { row, col, type: 'track', isHomePath: true, homePathColor: 'green' };
+  }
+  if (row === 7 && col >= 9 && col <= 13) {
+    return { row, col, type: 'track', isHomePath: true, homePathColor: 'blue' };
+  }
+
+  // Starting Safe Squares
+  if (row === 13 && col === 6) return { row, col, type: 'track', isSafe: true, isStartSquare: true, startColor: 'red' };
+  if (row === 6 && col === 1) return { row, col, type: 'track', isSafe: true, isStartSquare: true, startColor: 'green' };
+  if (row === 1 && col === 8) return { row, col, type: 'track', isSafe: true, isStartSquare: true, startColor: 'yellow' };
+  if (row === 8 && col === 13) return { row, col, type: 'track', isSafe: true, isStartSquare: true, startColor: 'blue' };
+
+  // Star Safe Squares
+  if (
+    (row === 8 && col === 2) ||
+    (row === 2 && col === 6) ||
+    (row === 6 && col === 12) ||
+    (row === 12 && col === 8)
+  ) {
+    return { row, col, type: 'track', isSafe: true };
+  }
+
+  return { row, col, type: 'track' };
+};
+
+const STATIC_BOARD_CELLS: StaticCellInfo[] = (() => {
+  const cells: StaticCellInfo[] = [];
+  for (let r = 0; r < 15; r++) {
+    for (let c = 0; c < 15; c++) {
+      const meta = computeCellMeta(r, c);
+      const isYardTopLeft = r === 0 && c === 0;
+      const isYardTopRight = r === 0 && c === 9;
+      const isYardBottomLeft = r === 9 && c === 0;
+      const isYardBottomRight = r === 9 && c === 9;
+      const isCenterRoot = r === 6 && c === 6;
+
+      const isSkipped =
+        (meta.type.startsWith('yard_') &&
+          !isYardTopLeft &&
+          !isYardTopRight &&
+          !isYardBottomLeft &&
+          !isYardBottomRight) ||
+        (meta.type === 'center' && !isCenterRoot);
+
+      cells.push({
+        r,
+        c,
+        meta,
+        isYardTopLeft,
+        isYardTopRight,
+        isYardBottomLeft,
+        isYardBottomRight,
+        isCenterRoot,
+        isSkipped,
+      });
+    }
+  }
+  return cells;
+})();
+
+const LudoBoardComponent: React.FC<LudoBoardProps> = ({
   players,
   currentColor,
   availableMoves,
@@ -35,7 +129,16 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
   hasRolled = false,
   isRolling = false,
   diceValue = null,
+  playerColor = 'red',
 }) => {
+  // If player chose Yellow or Green (residing at top of standard board),
+  // turn the board 180° so the player's house is at the bottom (nearer to the user)
+  const rotationDeg = playerColor === 'yellow' || playerColor === 'green' ? 180 : 0;
+  const counterRotateStyle: React.CSSProperties | undefined = useMemo(
+    () => (rotationDeg ? { transform: `rotate(-${rotationDeg}deg)` } : undefined),
+    [rotationDeg]
+  );
+
   // Pre-calculate token positions and group overlapping tokens
   const tokensOnBoard = useMemo(() => {
     const list: Array<{
@@ -83,52 +186,6 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
     return map;
   }, [tokensOnBoard]);
 
-  // Determine metadata for track cells (15x15)
-  const getCellMeta = (row: number, col: number): CellMeta => {
-    // Yards (6x6 corners)
-    if (row < 6 && col < 6) return { row, col, type: 'yard_green' };
-    if (row < 6 && col > 8) return { row, col, type: 'yard_yellow' };
-    if (row > 8 && col < 6) return { row, col, type: 'yard_red' };
-    if (row > 8 && col > 8) return { row, col, type: 'yard_blue' };
-
-    // Center (3x3 sanctum)
-    if (row >= 6 && row <= 8 && col >= 6 && col <= 8) {
-      return { row, col, type: 'center' };
-    }
-
-    // Home Column Straights
-    if (col === 7 && row >= 1 && row <= 5) {
-      return { row, col, type: 'track', isHomePath: true, homePathColor: 'yellow' };
-    }
-    if (col === 7 && row >= 9 && row <= 13) {
-      return { row, col, type: 'track', isHomePath: true, homePathColor: 'red' };
-    }
-    if (row === 7 && col >= 1 && col <= 5) {
-      return { row, col, type: 'track', isHomePath: true, homePathColor: 'green' };
-    }
-    if (row === 7 && col >= 9 && col <= 13) {
-      return { row, col, type: 'track', isHomePath: true, homePathColor: 'blue' };
-    }
-
-    // Starting Safe Squares
-    if (row === 13 && col === 6) return { row, col, type: 'track', isSafe: true, isStartSquare: true, startColor: 'red' };
-    if (row === 6 && col === 1) return { row, col, type: 'track', isSafe: true, isStartSquare: true, startColor: 'green' };
-    if (row === 1 && col === 8) return { row, col, type: 'track', isSafe: true, isStartSquare: true, startColor: 'yellow' };
-    if (row === 8 && col === 13) return { row, col, type: 'track', isSafe: true, isStartSquare: true, startColor: 'blue' };
-
-    // Star Safe Squares
-    if (
-      (row === 8 && col === 2) ||
-      (row === 2 && col === 6) ||
-      (row === 6 && col === 12) ||
-      (row === 12 && col === 8)
-    ) {
-      return { row, col, type: 'track', isSafe: true };
-    }
-
-    return { row, col, type: 'track' };
-  };
-
   return (
     <div className="relative w-full max-w-[min(94vw,500px)] aspect-square mx-auto select-none p-1.5 sm:p-2.5 rounded-2xl bg-gradient-to-br from-[#302318] via-[#1a1410] to-[#0c0805] sandstone-border shadow-2xl">
       {/* Decorative Ornate Temple Frame Corner Flutes */}
@@ -137,36 +194,21 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
       <div className="absolute bottom-1 left-1 w-3 h-3 border-b-2 border-l-2 border-[#d4af37]" aria-hidden="true" />
       <div className="absolute bottom-1 right-1 w-3 h-3 border-b-2 border-r-2 border-[#d4af37]" aria-hidden="true" />
 
-      {/* The 15x15 Grid Arena */}
-      <div className="relative w-full h-full grid grid-cols-15 grid-rows-15 bg-[#121926] rounded-xl overflow-hidden border border-[#d4af37]/40 shadow-inner">
-        {/* Render cells for the structural board */}
-        {Array.from({ length: 15 }).map((_, r) =>
-          Array.from({ length: 15 }).map((_, c) => {
-            const meta = getCellMeta(r, c);
+      {/* The 15x15 Grid Arena - Rotates smoothly so player's color is at the bottom */}
+      <div
+        className="relative w-full h-full grid grid-cols-15 grid-rows-15 bg-[#121926] rounded-xl overflow-hidden border border-[#d4af37]/40 shadow-inner gpu-accelerated"
+        style={{
+          transform: `rotate(${rotationDeg}deg)`,
+          transition: 'transform 0.45s cubic-bezier(0.4, 0, 0.2, 1)',
+        }}
+      >
+        {/* Render cells for the structural board using precomputed static cells */}
+        {STATIC_BOARD_CELLS.map((cell) => {
+          if (cell.isSkipped) return null;
+          const { r, c, meta, isYardTopLeft, isYardTopRight, isYardBottomLeft, isYardBottomRight, isCenterRoot } = cell;
 
-            // Hide individual cells inside 6x6 yards and 3x3 center so we can render compound custom zones
-            const isYardTopLeft = r === 0 && c === 0;
-            const isYardTopRight = r === 0 && c === 9;
-            const isYardBottomLeft = r === 9 && c === 0;
-            const isYardBottomRight = r === 9 && c === 9;
-            const isCenterRoot = r === 6 && c === 6;
-
-            if (
-              meta.type.startsWith('yard_') &&
-              !isYardTopLeft &&
-              !isYardTopRight &&
-              !isYardBottomLeft &&
-              !isYardBottomRight
-            ) {
-              return null; // Covered by composite yard block
-            }
-
-            if (meta.type === 'center' && !isCenterRoot) {
-              return null; // Covered by composite center block
-            }
-
-            // Compound Zone: Green Yard (Top Left: 6x6) - Utkala Vana
-            if (isYardTopLeft) {
+          // Compound Zone: Green Yard (Top Left: 6x6) - Utkala Vana
+          if (isYardTopLeft) {
               const isGreenActive = activeColors.includes('green');
               const isGreenTurn = currentColor === 'green';
               const isGreenFlashing = isGreenActive && isGreenTurn && (hasRolled || isRolling);
@@ -191,7 +233,7 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                     />
                   )}
 
-                  <div className="w-full flex justify-between items-center px-2 pt-1 text-[10px] sm:text-xs font-cinzel text-[#86efac] tracking-wider uppercase font-semibold z-10">
+                  <div className="w-full flex justify-between items-center px-2 pt-1 text-[10px] sm:text-xs font-cinzel text-[#86efac] tracking-wider uppercase font-semibold z-10" style={counterRotateStyle}>
                     <span className="flex items-center gap-1">
                       <span className={`w-2 h-2 rounded-full bg-[#22c55e] ${isGreenFlashing ? 'animate-ping' : ''}`} />
                       Utkala Vana
@@ -232,6 +274,7 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                               tokenId={tokensHere[0].tokenId}
                               isMovable={tokensHere[0].isMovable}
                               onClick={() => onTokenClick(tokensHere[0].tokenId)}
+                              style={counterRotateStyle}
                             />
                           )}
                         </div>
@@ -268,7 +311,7 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                     />
                   )}
 
-                  <div className="w-full flex justify-between items-center px-2 pt-1 text-[10px] sm:text-xs font-cinzel text-[#fde047] tracking-wider uppercase font-semibold z-10">
+                  <div className="w-full flex justify-between items-center px-2 pt-1 text-[10px] sm:text-xs font-cinzel text-[#fde047] tracking-wider uppercase font-semibold z-10" style={counterRotateStyle}>
                     <span className="flex items-center gap-1">
                       <span className={`w-2 h-2 rounded-full bg-[#eab308] ${isYellowFlashing ? 'animate-ping' : ''}`} />
                       Surya Rath
@@ -308,13 +351,14 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                               tokenId={tokensHere[0].tokenId}
                               isMovable={tokensHere[0].isMovable}
                               onClick={() => onTokenClick(tokensHere[0].tokenId)}
+                              style={counterRotateStyle}
                             />
                           )}
                         </div>
                       );
                     })}
                   </div>
-                  <span className="text-[9px] font-cinzel text-[#d4af37]/70 tracking-wider pb-1 z-10">
+                  <span className="text-[9px] font-cinzel text-[#d4af37]/70 tracking-wider pb-1 z-10" style={counterRotateStyle}>
                     {isYellowFlashing ? '⚡ Active Roll' : isYellowActive ? 'Active House' : 'Dormant Sanctuary'}
                   </span>
                 </div>
@@ -374,13 +418,14 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                               tokenId={tokensHere[0].tokenId}
                               isMovable={tokensHere[0].isMovable}
                               onClick={() => onTokenClick(tokensHere[0].tokenId)}
+                              style={counterRotateStyle}
                             />
                           )}
                         </div>
                       );
                     })}
                   </div>
-                  <div className="w-full flex justify-between items-center px-2 pb-1 text-[10px] sm:text-xs font-cinzel text-[#fca5a5] tracking-wider uppercase font-semibold z-10">
+                  <div className="w-full flex justify-between items-center px-2 pb-1 text-[10px] sm:text-xs font-cinzel text-[#fca5a5] tracking-wider uppercase font-semibold z-10" style={counterRotateStyle}>
                     <span className="flex items-center gap-1">
                       <span className={`w-2 h-2 rounded-full bg-[#ef4444] ${isRedFlashing ? 'animate-ping' : ''}`} />
                       Kalinga Sena
@@ -452,13 +497,14 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                               tokenId={tokensHere[0].tokenId}
                               isMovable={tokensHere[0].isMovable}
                               onClick={() => onTokenClick(tokensHere[0].tokenId)}
+                              style={counterRotateStyle}
                             />
                           )}
                         </div>
                       );
                     })}
                   </div>
-                  <div className="w-full flex justify-between items-center px-2 pb-1 text-[10px] sm:text-xs font-cinzel text-[#93c5fd] tracking-wider uppercase font-semibold z-10">
+                  <div className="w-full flex justify-between items-center px-2 pb-1 text-[10px] sm:text-xs font-cinzel text-[#93c5fd] tracking-wider uppercase font-semibold z-10" style={counterRotateStyle}>
                     <span className="flex items-center gap-1">
                       <span className={`w-2 h-2 rounded-full bg-[#3b82f6] ${isBlueFlashing ? 'animate-ping' : ''}`} />
                       Nilachala Sena
@@ -552,6 +598,7 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                       <div
                         key={`finished-${col}`}
                         className={`absolute z-20 flex items-center justify-center ${posClass}`}
+                        style={counterRotateStyle}
                       >
                         <span className="text-[9px] sm:text-[10px] font-bold text-white bg-black/80 px-1.5 py-0.5 rounded-full border border-[#ffd700] shadow-md">
                           {p.tokensFinished}/4
@@ -622,6 +669,7 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                 {/* Safe Square Sacred Star Sigil */}
                 {meta.isSafe && tokensOnThisCell.length === 0 && (
                   <span
+                    style={counterRotateStyle}
                     className={`text-xs sm:text-sm font-bold opacity-80 select-none ${
                       baseExitMove ? 'text-[#ffffff] scale-110' : 'text-[#ffd700]'
                     }`}
@@ -634,7 +682,7 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
 
                 {/* Home Path Directional Arrow Indicator */}
                 {meta.isHomePath && tokensOnThisCell.length === 0 && (
-                  <span className="text-white/40 text-[9px] sm:text-[10px] font-bold">
+                  <span style={counterRotateStyle} className="text-white/40 text-[9px] sm:text-[10px] font-bold">
                     {meta.homePathColor === 'red' && '▲'}
                     {meta.homePathColor === 'yellow' && '▼'}
                     {meta.homePathColor === 'green' && '▶'}
@@ -653,6 +701,7 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                         isMovable={tokensOnThisCell[0].isMovable}
                         onClick={() => onTokenClick(tokensOnThisCell[0].tokenId)}
                         size="full"
+                        style={counterRotateStyle}
                       />
                     ) : tokensOnThisCell.length === 2 ? (
                       // Exactly 2 tokens sharing square: side-by-side layout, both directly clickable!
@@ -665,6 +714,7 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                               isMovable={tok.isMovable}
                               onClick={() => onTokenClick(tok.tokenId)}
                               size="sm"
+                              style={counterRotateStyle}
                             />
                           </div>
                         ))}
@@ -680,6 +730,7 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                               isMovable={tok.isMovable}
                               onClick={() => onTokenClick(tok.tokenId)}
                               size="sm"
+                              style={counterRotateStyle}
                             />
                           </div>
                         ))}
@@ -689,9 +740,28 @@ export const LudoBoard: React.FC<LudoBoardProps> = ({
                 )}
               </div>
             );
-          })
-        )}
+          })}
       </div>
     </div>
   );
 };
+
+export const LudoBoard: React.FC<LudoBoardProps> = React.memo(
+  LudoBoardComponent,
+  (prev, next) => {
+    // Skip re-renders when rolling is in progress for both prev & next (display doesn't change during roll)
+    if (prev.isRolling && next.isRolling) {
+      return true;
+    }
+    if (prev.currentColor !== next.currentColor) return false;
+    if (prev.playerColor !== next.playerColor) return false;
+    if (prev.hasRolled !== next.hasRolled) return false;
+    if (prev.isRolling !== next.isRolling) return false;
+    if (prev.hasRolled && prev.diceValue !== next.diceValue) return false;
+    if (prev.availableMoves !== next.availableMoves) return false;
+    if (prev.players !== next.players) return false;
+    if (prev.activeColors !== next.activeColors) return false;
+
+    return true;
+  }
+);

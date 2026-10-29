@@ -21,7 +21,7 @@ export interface DiceRollerProps {
   playerColor?: PlayerColor;
 }
 
-export const DiceRoller: React.FC<DiceRollerProps> = ({
+export const DiceRoller: React.FC<DiceRollerProps> = React.memo(({
   currentColor,
   diceValue,
   isRolling,
@@ -297,4 +297,4 @@ export const DiceRoller: React.FC<DiceRollerProps> = ({
       </div>
     </div>
   );
-};
+});

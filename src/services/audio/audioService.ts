@@ -132,23 +132,9 @@ class AudioService {
       return;
     }
 
-    const audioUrl = this.bgmAssetMap[track];
     if (typeof window !== 'undefined') {
-      const audio = new Audio(audioUrl);
-      audio.loop = true;
-      audio.volume = this.settings.bgmVolume;
-      this.bgmAudioEl = audio;
-
-      audio.play().catch(() => {
-        // Handled gracefully: Audio file not present or autoplay restricted
-        // Fallback to synthesized ambient chord loop
-        this.startSynthBgm(track);
-      });
-
-      audio.onerror = () => {
-        // Fallback gracefully on 404 or unsupported format
-        this.startSynthBgm(track);
-      };
+      // Use synthesized ambient audio directly for zero-latency, zero-404 performance
+      this.startSynthBgm(track);
     }
   }
 
@@ -195,30 +181,8 @@ class AudioService {
       return;
     }
 
-    const audioUrl = this.sfxAssetMap[effect];
-    let playedFromFile = false;
-
-    if (typeof window !== 'undefined') {
-      try {
-        const audio = new Audio(audioUrl);
-        audio.volume = this.settings.sfxVolume;
-        const playPromise = audio.play();
-        if (playPromise !== undefined) {
-          playPromise
-            .then(() => {
-              playedFromFile = true;
-            })
-            .catch(() => {
-              // File missing or autoplay blocked -> fallback to synthesized sound
-              this.synthesizeSfx(effect);
-            });
-        }
-      } catch {
-        this.synthesizeSfx(effect);
-      }
-    } else {
-      this.synthesizeSfx(effect);
-    }
+    // Direct synthesized Web Audio eliminates all network latency and 404 error delays
+    this.synthesizeSfx(effect);
   }
 
   public setSfxVolume(volume: number) {

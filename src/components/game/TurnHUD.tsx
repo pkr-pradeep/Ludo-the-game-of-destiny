@@ -17,7 +17,7 @@ export interface TurnHUDProps {
   onOpenSettings?: () => void;
 }
 
-export const TurnHUD: React.FC<TurnHUDProps> = ({
+export const TurnHUD: React.FC<TurnHUDProps> = React.memo(({
   currentColor,
   players,
   activeColors,
@@ -148,4 +148,4 @@ export const TurnHUD: React.FC<TurnHUDProps> = ({
       </div>
     </header>
   );
-};
+});

@@ -131,6 +131,7 @@ export const GameScreen: React.FC<GameScreenProps> = ({
         <LudoBoard
           players={players}
           currentColor={currentColor}
+          playerColor={playerColor}
           availableMoves={availableMoves}
           onTokenClick={executeMove}
           activeColors={activeColors}
